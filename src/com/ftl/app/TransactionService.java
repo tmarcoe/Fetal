@@ -2,6 +2,7 @@ package com.ftl.app;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -108,13 +109,14 @@ public class TransactionService extends FetalTransaction {
 		System.out.printf("commitStock(%s, %d)\n", sku, qty);
 		
 	}
+	
 
 	public void showGuiTree(FetalParser parser, TransactionContext tree ) {
         JFrame frame = new JFrame("Fetal Tree");
         JPanel panel = new JPanel();
         TreeViewer viewr = new TreeViewer(Arrays.asList(
                 parser.getRuleNames()),tree);
-        viewr.setScale(1.5);//scale a little
+        //viewr.setScale(1.5);//scale a little
         panel.add(viewr);
         frame.add(panel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -158,5 +160,17 @@ public class TransactionService extends FetalTransaction {
 	@Override
 	public void rollback() {
 		System.out.print("Rolled Back");
+	}
+
+	@Override
+	public Object lookup(String table, String sql) {
+		System.out.printf("lookup(%s , %s)\n", table, sql);
+		return null;
+	}
+
+	@Override
+	public List<Object> list(String table, String sql) {
+		System.out.printf("list(%s , %s)\n", table, sql);
+		return null;
 	}
 }

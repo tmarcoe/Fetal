@@ -19,14 +19,20 @@ public class TestAntlr {
 		FetalTransaction trans = new TransactionService();
 		trans.initTransaction("file:///Repository/config/fetal.properties");
 
-        trans.setDebugMode(false);
-        try {
+        trans.setDebugMode(true);
+        try {/*
     		trans.setAmount(1000);
     		trans.setTax(10);
     		trans.setDescription("Purchase of inventory (SKU #9999999)");
         	trans.addVariable("xmlFile",VariableType.STRING, "accounts.xml");
         	loadSalesReceipt("", trans);
-        	trans.loadRule("purchase.trans");
+        	*/
+        	Register register = new Register();
+        	trans.addVariable("register", VariableType.DAO, register);
+        	register.setId(1L);
+        	register.setName("John");
+        	register.setAmount(100.00);
+        	trans.loadRule("myrule.trans");
         } catch (RuntimeException e) {
         	handled = true;
         	throw e;
@@ -44,6 +50,7 @@ public class TestAntlr {
 		trans.printVarList();
 	}
 	
+	@SuppressWarnings("unused")
 	private static void loadSalesReceipt(String key, FetalTransaction trans) {
 		String[] sku = {"00990099","00990098","00990097","00990096","00990095"};
 		double[] price = {100, 150, 400, 300, 250};

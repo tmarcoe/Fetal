@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -123,6 +125,10 @@ public abstract class FetalTransaction {
 
 	public void setDebugMode(boolean debugMode) {
 		this.debugMode = debugMode;
+	}
+
+	public Properties getProps() {
+		return props;
 	}
 
 	/****************************************************************************
@@ -311,6 +317,53 @@ public abstract class FetalTransaction {
 
 		return obj.getClass().getSimpleName();
 	}
+	public Object importClass(String classPath) {
+		Class<?> cls;
+		Object obj = null;
+		
+		try {
+			cls = Class.forName(classPath);
+			obj = cls.newInstance();
+			cls.cast(obj);
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return obj;
+	}
+	
+
+	public Object invokeMethod(Object obj, String method, Object... args) {
+		Object o = null;
+		Class<?>[] cls = null;
+		Method m;
+		if (args != null && args.length > 0) {
+			cls = new Class<?>[args.length];
+			for (int i = 0; i < args.length; i++) {
+				cls[i] = args[i].getClass();
+			}
+		}else{
+			args = null;
+		}
+
+		try {
+			
+			if (args != null) {
+				m = obj.getClass().getMethod(method, cls );
+				o = m.invoke(obj, args);
+			}else {
+				m = obj.getClass().getMethod(method, null);
+				o = m.invoke(obj, null);				
+			}
+			
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return o;
+	}
 
 	/*******************************************************************************
 	 * This is for debug only! It lists all declared variables and their values.
@@ -368,7 +421,7 @@ public abstract class FetalTransaction {
 		double total = 0.0;
 		Iterator<Entry<String,SalesItem>> it = items.entrySet().iterator();
 		while (it.hasNext()) {
-			Map.Entry<String,SalesItem> entry = (Map.Entry<String,SalesItem>) it.next();
+			Map.Entry<String,SalesItem> entry = it.next();
 			SalesItem si = entry.getValue();
 			
 			total += si.getPrice();
@@ -394,7 +447,7 @@ public abstract class FetalTransaction {
 		double price = 999999999;
 		Iterator<Entry<String, SalesItem>> it = items.entrySet().iterator();
 		while (it.hasNext()) {
-			Map.Entry<String, SalesItem> pair = (Map.Entry<String, SalesItem>) it.next();
+			Map.Entry<String, SalesItem> pair = it.next();
 			SalesItem si = pair.getValue();
 			if (si.getPrice() < price) {
 				sku = pair.getKey();
@@ -411,7 +464,7 @@ public abstract class FetalTransaction {
 		Iterator<Entry<String, SalesItem>> it = items.entrySet().iterator();
 		while (it.hasNext()) {
 
-			Map.Entry<String, SalesItem> pair = (Map.Entry<String, SalesItem>) it.next();
+			Map.Entry<String, SalesItem> pair = it.next();
 			SalesItem si = pair.getValue();
 			if (si.getPrice() > price) {
 				sku = pair.getKey();
@@ -424,7 +477,7 @@ public abstract class FetalTransaction {
 	public void commitReceipt() {
 		Iterator<Entry<String, SalesItem>> it = items.entrySet().iterator();
 		while (it.hasNext()) {
-			Map.Entry<String, SalesItem> pair = (Map.Entry<String, SalesItem>) it.next();
+			Map.Entry<String, SalesItem> pair = it.next();
 			SalesItem si = pair.getValue();
 			Long qty = Long.valueOf(String.valueOf(si.getQty()));
 			commitStock(pair.getKey(), qty);
@@ -566,6 +619,8 @@ public abstract class FetalTransaction {
 	 *************************************************************************************/
 
 	public abstract double getRate(String Target);
+	public abstract Object lookup(String table, String sql);
+	public abstract List<Object> list(String table, String sql);
 
 	public abstract String getBaseCurrency();
 
