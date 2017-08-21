@@ -10,9 +10,9 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -22,11 +22,11 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.NoViableAltException;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
+import org.apache.log4j.Logger;
 import org.xml.sax.SAXException;
 
 import com.ftl.derived.FetalLexer;
@@ -35,7 +35,8 @@ import com.ftl.derived.FetalParser.BlockContext;
 import com.ftl.derived.FetalParser.TransactionContext;
 
 public abstract class FetalTransaction {
-
+	private static Logger logger = Logger.getLogger(FetalTransaction.class);
+	
 	private String Description = "";
 	private long errorCount = 0;
 	private Map<String, Variable> variables = new HashMap<String, Variable>();
@@ -43,32 +44,86 @@ public abstract class FetalTransaction {
 	private Properties props;
 	private String errMsg = "";
 	private boolean debugMode = false;
-	private SalesHeader header = new SalesHeader();
-	private Map<String, SalesItem> items = new HashMap<String, SalesItem>();
+	private TransactionContext transCtx;
+	private BlockContext blockCtx;
+	private FetalParser fParser;
 
-	/*********************************************************************
-	 * Initialize Transaction This clears all variables and the internal sales
-	 * receipt
-	 *********************************************************************/
-	@Deprecated
-	public void initTransaction() {
-		clearVariables();
-		clearSalesItems();
-		clearMap();
+	
+	
+	public TransactionContext getTransCtx() {
+		return transCtx;
 	}
+
+	public BlockContext getBlockCtx() {
+		return blockCtx;
+	}
+
+	public FetalParser getfParser() {
+		return fParser;
+	}
+
+	/***********************************************************************
+	 * Error Handliing
+	 * 
+	 ***********************************************************************/
+	
+	final String[] errorCode = {"Variable Not Defined", "Malformed Expression", "Type cast exception", "Cannot load file", 
+								"Invalid date format", "Cannot load object", "Cannot invoke method", "Invalid object",
+								"Invalid argument"};
 
 	public void handleError(String msg) {
 		errorCount++;
 		errMsg = msg;	
 	}
+	public String getErrMsg() {
+		String msg = errMsg;
+		errMsg = "";
+
+		return msg;
+	}
+	public RecognitionException errorHandler(int errorNum, ParserRuleContext context, Parser parser) {
+		Token token = parser.getCurrentToken();
+		String errStr = String.format(" @line %d, pos %d", token.getLine(), token.getCharPositionInLine());
+		String msg = errorCode[errorNum];
+		msg += errStr;
+		setErrMsg(msg);
+		errorCount++;
+		parser.notifyErrorListeners(msg);
+
+		return new RecognitionException(msg, parser, null, context);
+	}
+	
+	public void setErrMsg(String errMsg) {
+		this.errMsg = errMsg;
+	}
+
+	public boolean isDebugMode() {
+		return debugMode;
+	}
+
+	public void setDebugMode(boolean debugMode) {
+		this.debugMode = debugMode;
+	}
+	
+	public boolean hasErrors() {
+		return (errorCount > 0);
+	}
+	
+
+	/*********************************************************************
+	 * Initialize Transaction This clears all variables and the internal sales
+	 * receipt
+	 *********************************************************************/
 	public void initTransaction(String setupUrl) throws IOException {
 		URL url = new URL(setupUrl);
 		InputStream in = url.openStream();
 		Reader reader = new InputStreamReader(in);
 		props = new Properties();
 		props.load(reader);
+	}
+	
+	public void closeFetal() {
 		clearVariables();
-		clearSalesItems();
 		clearMap();
 	}
 	
@@ -78,14 +133,6 @@ public abstract class FetalTransaction {
 
 	public void clearMap() {
 		accountNames.clear();
-	}
-	public void clearSalesItems() {
-		items.clear();
-		setAmount(0);
-		setTax(0);
-		setTotalItems(0);
-		setShipCharges(0);
-		setAddedCharges(0);
 	}
 
 
@@ -108,25 +155,6 @@ public abstract class FetalTransaction {
 		this.errorCount = errorCount;
 	}
 
-	public String getErrMsg() {
-		String msg = errMsg;
-		errMsg = "";
-
-		return msg;
-	}
-
-	public void setErrMsg(String errMsg) {
-		this.errMsg = errMsg;
-	}
-
-	public boolean isDebugMode() {
-		return debugMode;
-	}
-
-	public void setDebugMode(boolean debugMode) {
-		this.debugMode = debugMode;
-	}
-
 	public Properties getProps() {
 		return props;
 	}
@@ -136,53 +164,7 @@ public abstract class FetalTransaction {
 	 * Setters and Getters from the Sales header.
 	 ****************************************************************************/
 
-	public SalesHeader getHeader() {
-		return header;
-	}
 
-	public void setHeader(SalesHeader header) {
-		this.header = header;
-	}
-
-	public double getAmount() {
-		return header.getTotalPrice();
-	}
-
-	public void setAmount(double amount) {
-		header.setTotalPrice(amount);
-	}
-
-	public double getTax() {
-		return header.getTotalTax();
-	}
-
-	public void setTax(double tax) {
-		header.setTotalTax(tax);
-	}
-
-	public long getTotalItems() {
-		return header.getTotalItems();
-	}
-
-	public void setTotalItems(long totalItems) {
-		header.setTotalItems(totalItems);
-	}
-
-	public double getAddedCharges() {
-		return header.getAddedCharges();
-	}
-
-	public void setAddedCharges(double addedCharges) {
-		header.setAddedCharges(addedCharges);
-	}
-
-	public double getShipCharges() {
-		return header.getTotalShipping();
-	}
-
-	public void setShipCharges(double shipCharges) {
-		header.setTotalShipping(shipCharges);
-	}
 	public void putMap(String account, String name) {
 		accountNames.put(account, name);
 	}
@@ -217,12 +199,6 @@ public abstract class FetalTransaction {
 			putMap(nv[0], nv[1]);
 		}
 	}
-	/******************************************************************
-	 * Keep track of errors
-	 ******************************************************************/
-	public boolean hasErrors() {
-		return (errorCount > 0);
-	}
 
 	/************************************************************************
 	 * For processing variables
@@ -236,7 +212,7 @@ public abstract class FetalTransaction {
 		}
 	}
 
-	public void addVariable(String name, VariableType type, Object value) {
+	public void publish(String name, VariableType type, Object value) {
 		Variable var = new Variable();
 
 		var.setType(type);
@@ -246,7 +222,7 @@ public abstract class FetalTransaction {
 		variables.put(name, var);
 	}
 
-	public void addVariable(String name, VariableType type) {
+	public void publish(String name, VariableType type) {
 		Variable var = new Variable();
 
 		var.setType(type);
@@ -254,7 +230,6 @@ public abstract class FetalTransaction {
 
 		variables.put(name, var);
 	}
-
 
 	public VariableType getType(String name) {
 		return variables.get(name).getType();
@@ -264,14 +239,30 @@ public abstract class FetalTransaction {
 		Variable var = variables.get(name);
 
 		if (var != null) {
-			if (var.getType() == VariableType.DOUBLE) {
-				return Double.valueOf(String.valueOf(var.getValue()));
-			}else if (var.getType() == VariableType.LONG) {
-				return Long.valueOf(String.valueOf(var.getValue()));
+			if (var.getType() == VariableType.DECIMAL) {
+				if (var.getValue() != null) {
+					return Double.valueOf(String.valueOf(var.getValue()));
+				}else {
+					return Double.valueOf(0);
+				}
+			}else if (var.getType() == VariableType.NUMBER) {
+				if (var.getValue() != null) {
+					return Long.valueOf(String.valueOf(var.getValue()));
+				}else {
+					return Long.valueOf(0);
+				}
 			}else if (var.getType() == VariableType.BOOLEAN) {
-				return (boolean) var.getValue();
+				if (var.getValue() != null) {
+					return (boolean) var.getValue();
+				}else {
+					return false;
+				}
 			}else if (var.getType() == VariableType.STRING) {
-				return String.valueOf(var.getValue());
+				if (var.getValue() != null) {
+					return String.valueOf(var.getValue());
+				}else {
+					return "";
+				}
 			}else if (var.getType() == VariableType.DATE) {
 				return (Date) var.getValue();
 			}else{
@@ -317,6 +308,7 @@ public abstract class FetalTransaction {
 
 		return obj.getClass().getSimpleName();
 	}
+	
 	public Object importClass(String classPath) {
 		Class<?> cls;
 		Object obj = null;
@@ -326,14 +318,13 @@ public abstract class FetalTransaction {
 			obj = cls.newInstance();
 			cls.cast(obj);
 		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e.getMessage());
+			return null;
 		}
 		
 		return obj;
 	}
 	
-
 	public Object invokeMethod(Object obj, String method, Object... args) {
 		Object o = null;
 		Class<?>[] cls = null;
@@ -358,11 +349,46 @@ public abstract class FetalTransaction {
 			}
 			
 		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e.getMessage());
+			return null;
 		}
 		
 		return o;
+	}
+
+	public Double getDays(Date date, Date date2) {
+		double diffDate =  (date2.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
+
+		return (double) Math.round((diffDate * 4.0) / 4.0);
+	}
+	
+	public String dayOfTheWeek(Date date) {
+		String[] dow = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+		Calendar c = Calendar.getInstance();
+		c.setTime(date);
+		
+		return dow[(c.get(Calendar.DAY_OF_WEEK) - 1)];
+	}
+	
+	public Long getCalendarDay(Date date) {
+		Calendar c = Calendar.getInstance();
+		c.setTime(date);
+		
+		return Long.valueOf(String.valueOf(c.get(Calendar.DAY_OF_MONTH)));
+	}
+	
+	public Long getMonth(Date date) {
+		Calendar c = Calendar.getInstance();
+		c.setTime(date);
+		
+		return (Long.valueOf(String.valueOf(c.get(Calendar.MONTH))) + 1);		
+	}
+	
+	public Long getYear(Date date) {
+		Calendar c = Calendar.getInstance();
+		c.setTime(date);
+		
+		return Long.valueOf(String.valueOf(c.get(Calendar.YEAR)));		
 	}
 
 	/*******************************************************************************
@@ -379,134 +405,6 @@ public abstract class FetalTransaction {
 	}
 
 
-	public long getItemQty(String sku) {
-		SalesItem sales = items.get(sku);
-		if (sales == null) {
-			return 0;
-		}
-
-		return sales.getQty();
-	}
-
-	public double getItemPrice(String sku) {
-		SalesItem sales = items.get(sku);
-		if (sales == null) {
-			return 0.0;
-		}
-		return sales.getPrice();
-	}
-
-	public double getItemTax(String sku) {
-		SalesItem sales = items.get(sku);
-
-		if (sales == null) {
-			return 0.0;
-		}
-
-		return sales.getTax();
-	}
-
-	public long getItemCount() {
-		if (header == null) {
-			return 0;
-		}
-
-		return header.getTotalItems();
-	}
-
-	public double getItemTotal() {
-		if (header == null) {
-			return 0.0;
-		}
-		double total = 0.0;
-		Iterator<Entry<String,SalesItem>> it = items.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<String,SalesItem> entry = it.next();
-			SalesItem si = entry.getValue();
-			
-			total += si.getPrice();
-		}
-		return total;
-	}
-
-	public long getCouponCount() {
-		this.getCouponCount();
-
-		return 0;
-	}
-
-	public void addSalesItem(String sku, SalesItem item) {
-		items.put(sku, item);
-		setAmount(getAmount() + (item.getPrice() * item.getQty()));
-		setTax(getTax() + (item.getTax() * item.getQty()));
-		setTotalItems(getTotalItems() + item.getQty());
-	}
-
-	public String getLowestItem() {
-		String sku = "";
-		double price = 999999999;
-		Iterator<Entry<String, SalesItem>> it = items.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<String, SalesItem> pair = it.next();
-			SalesItem si = pair.getValue();
-			if (si.getPrice() < price) {
-				sku = pair.getKey();
-				price = si.getPrice();
-			}
-		}
-
-		return sku;
-	}
-
-	public String getHighestItem() {
-		String sku = "";
-		double price = 0;
-		Iterator<Entry<String, SalesItem>> it = items.entrySet().iterator();
-		while (it.hasNext()) {
-
-			Map.Entry<String, SalesItem> pair = it.next();
-			SalesItem si = pair.getValue();
-			if (si.getPrice() > price) {
-				sku = pair.getKey();
-				price = si.getPrice();
-			}
-		}
-		return sku;
-	}
-
-	public void commitReceipt() {
-		Iterator<Entry<String, SalesItem>> it = items.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<String, SalesItem> pair = it.next();
-			SalesItem si = pair.getValue();
-			Long qty = Long.valueOf(String.valueOf(si.getQty()));
-			commitStock(pair.getKey(), qty);
-		}
-	}
-
-	public void depleteReceipt() {
-		for (Entry<String, SalesItem> entry : items.entrySet() ) {
-			SalesItem si = entry.getValue();
-			String sku =  entry.getKey();
-			Long qty = Long.valueOf(String.valueOf(si.getQty()));
-			depleteStock(sku, qty);
-		}
-	}
-
-	/******************************************************************************************
-	 * Exception handling
-	 * 
-	 ******************************************************************************************/
-
-	public NoViableAltException getException(String msg, ParserRuleContext context, Parser recognizer) {
-		Token token = context.getStart();
-		String errStr = String.format(" @ line %d, pos %d - In rule %s", token.getLine(), token.getCharPositionInLine(),
-				context.getText());
-		msg = msg + errStr;
-		setErrMsg(msg);
-		errorCount++;
-		return new NoViableAltException(recognizer);
-	}
 
 	public boolean isMatched(Object lObj, Object rObj) {
 		if (lObj == null || rObj == null)
@@ -525,7 +423,6 @@ public abstract class FetalTransaction {
 	 * in blocks). 3.) The loader for coupons.
 	 *******************************************************************************************/
 
-	@SuppressWarnings("unused")
 	public void loadRule(String rule) throws IOException, RecognitionException, RuntimeException {
 
 		URL url = new URL(props.getProperty("transactionUrl") + rule);
@@ -535,18 +432,23 @@ public abstract class FetalTransaction {
 		FetalLexer lexer = new FetalLexer(in);
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		FetalParser parser = new FetalParser(tokens);
+		fParser = parser;
 
-		parser.removeErrorListeners(); // remove ConsoleErrorListener
-		parser.addErrorListener(new FetalErrorListener()); // add ours
-		parser.setErrorHandler(new BailErrorStrategy());
+		if (isDebugMode() == false) {
+			parser.removeErrorListeners(); // remove ConsoleErrorListener
+			parser.addErrorListener(new FetalErrorListener()); // add ours
+			parser.setErrorHandler(new BailErrorStrategy());
+		}
 		try {
-			TransactionContext context = parser.transaction(this);
+			transCtx = parser.transaction(this);
+			
 		} catch (RuntimeException e) {
-			throw new RuntimeException(errMsg);
+			if (errMsg.length() == 0) {
+				errMsg = e.getMessage();
+			}
 		}
 	}
 
-	@SuppressWarnings("unused")
 	public void loadBlock(String rule) throws RecognitionException, IOException {
 		URL url = new URL(props.getProperty("blockUrl") + rule);
 		BufferedReader read = new BufferedReader(new InputStreamReader(url.openStream(),"utf-8"));
@@ -555,17 +457,18 @@ public abstract class FetalTransaction {
 		FetalLexer lexer = new FetalLexer(in);
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		FetalParser parser = new FetalParser(tokens);
+		fParser = parser;
+
 		parser.removeErrorListeners(); // remove ConsoleErrorListener
 		parser.addErrorListener(new FetalErrorListener()); // add ours
 		try {
-			BlockContext context = parser.block(this);
+			blockCtx = parser.block(this);
 		} catch (RuntimeException e) {
 			throw new RuntimeException(errMsg);
 		}
 
 	}
 
-	@SuppressWarnings("unused")
 	public void loadCoupon(String rule) throws IOException {
 		URL url = new URL(props.getProperty("couponUrl") + rule);
 		BufferedReader read = new BufferedReader(new InputStreamReader(url.openStream(),"utf-8"));
@@ -574,10 +477,11 @@ public abstract class FetalTransaction {
 		FetalLexer lexer = new FetalLexer(in);
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		FetalParser parser = new FetalParser(tokens);
+		fParser = parser;
 		parser.removeErrorListeners(); // remove ConsoleErrorListener
 		parser.addErrorListener(new FetalErrorListener()); // add ours
 		try {
-			TransactionContext context = parser.transaction(this);
+			transCtx = parser.transaction(this);
 		} catch (RuntimeException e) {
 			throw new RuntimeException(errMsg);
 		}
@@ -585,52 +489,28 @@ public abstract class FetalTransaction {
 
 	/********************************************************************
 	 * The following are abstract functions.
-	 ********************************************************************
 	 ********************************************************************/
 	/********************************************************************
 	 * Transaction functions
 	 ********************************************************************/
 	public abstract void beginTrans();
-
 	public abstract void commitTrans();
+	public abstract void rollback();
 
 	/*********************************************************
 	 * Accounting functions
 	 *********************************************************/
 	public abstract void credit(Double amount, String account);
-
 	public abstract void debit(Double amount, String account);
-
 	public abstract void ledger(char type, Double amount, String account, String description);
-
 	public abstract double getBalance(String account);
 
-	/***********************************************************************************
-	 * Inventory functions
-	 ************************************************************************************/
-	public abstract void addStock(String sku, Long qty);
-
-	public abstract void depleteStock(String sku, Long qty);
-
-	public abstract void commitStock(String sku, Long qty);
 
 	/*************************************************************************************
 	 * Miscellaneous
 	 *************************************************************************************/
 
-	public abstract double getRate(String Target);
 	public abstract Object lookup(String table, String sql);
 	public abstract List<Object> list(String table, String sql);
-
-	public abstract String getBaseCurrency();
-
-	public abstract Date lastRefreshDate();
-	public abstract void rollback();
-
-	public Double getDays(Date date, Date date2) {
-		double diffDate =  (date2.getTime() - date.getTime()) / (1000 * 60 * 60 * 12);
-
-		return (double) Math.round((diffDate * 4.0) / 4.0);
-	}
 
 }

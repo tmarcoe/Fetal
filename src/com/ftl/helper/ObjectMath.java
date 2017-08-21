@@ -497,11 +497,4 @@ public class ObjectMath {
 		return obj.getClass().getSimpleName();
 	}
 
-	public String dayOfTheWeek(Date date) {
-		String[] dow = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-		Calendar c = Calendar.getInstance();
-		c.setTime(date);
-		
-		return dow[(c.get(Calendar.DAY_OF_WEEK) - 1)];
-	}
 }

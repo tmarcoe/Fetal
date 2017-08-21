@@ -1,4 +1,4 @@
 package com.ftl.helper;
 
-public enum VariableType {DOUBLE,LONG,STRING,DATE,BOOLEAN,OBJECT,DAO}
+public enum VariableType {DECIMAL,NUMBER,STRING,DATE,BOOLEAN,OBJECT,DAO}
 

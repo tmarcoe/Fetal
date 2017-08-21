@@ -4,7 +4,5 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="C:/Users/Timothy Marcoe/Downloads/antlr-4.5.2-complete.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Timothy Marcoe/.m2/repository/log4j/log4j/1.2.14/log4j-1.2.14.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Timothy Marcoe/.m2/repository/com/cedarsoftware/json-io/4.5.0/json-io-4.5.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Timothy Marcoe/Documents/Repository/dom4j-1.6.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -6,8 +6,8 @@ public class MyTestClass {
 		System.out.println("It works!!!!");
 	}
 	
-	public String assignValue() {
-		return "This works well!!!";
+	public Long assignValue() {
+		return Long.valueOf(5);
 	}
 	
 	public double getFive(Double five) {

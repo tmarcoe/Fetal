@@ -30,8 +30,11 @@ public class BailErrorStrategy extends DefaultErrorStrategy {
 
 	@Override
 	public void reportError(Parser recognizer, RecognitionException e) {
+		String msg = e.toString();
 		Token t = recognizer.getCurrentToken();
-		logger.error(t.getText() + " @" + t.getLine() + "," + t.getCharPositionInLine());
+		
+
+		logger.error(msg + ": " + t.getText() + " @" + t.getLine() + "," + t.getCharPositionInLine());
 		
 	}
 }
