@@ -16,6 +16,9 @@ import java.lang.reflect.InvocationTargetException;
 @members {
 	FetalTransaction trans;
 	ObjectMath	om;
+	private static final int NOT_DEFINED=0, MALFORMED_EXP=1, CAST_EXCEPT=2, CANNOT_LOAD_FILE=3,
+							 INVALID_DATE=4, CANNOT_LOAD_OBJECT=5, CANNOT_INVOKE_METHD=6, INVALID_OBJECT=7,
+							 INVALID_ARG=8; 
 }
 transaction[FetalTransaction t]  : 
 			{
@@ -41,39 +44,57 @@ statement 	: declaration ';'
 			;
 			
 declaration : type var
-			{trans.addVariable($var.name, $type.varType); }
+			{
+				trans.publish($var.name, $type.varType);
+			}
 			| type assignment
 			{
-				trans.addVariable($assignment.lh, $type.varType, $assignment.obj);				
+				trans.publish($assignment.lh, $type.varType, $assignment.obj);				
 			}
 			;
 			
-var returns [String name]		: identifier
-								{$name = $identifier.text;}
-								;
+var returns [String name]	
+			: identifier
+			{
+				$name = $identifier.text;
+			}
+			;
 
 
 type returns [VariableType varType]
-			: arithmetic
+			: DecimalType
 			{
-				$varType = $arithmetic.varType;
+				$varType = VariableType.DECIMAL;
 			}
-			| lexical
+			| NumberType
 			{
-				$varType = $lexical.varType;
+				$varType = VariableType.NUMBER;
 			}
-			| logical
+
+			| StringType 
 			{
-				$varType = $logical.varType;
+				$varType = VariableType.STRING;
 			}
-			| dateType
+			| BooleanType
 			{
-				$varType = $dateType.varType;
+				$varType = VariableType.BOOLEAN;
+			}
+			| DateType
+			{
+				$varType = VariableType.DATE;
+			}
+			| ObjectType
+			{
+				$varType = VariableType.OBJECT;
+			}
+			| DaoType
+			{
+				$varType = VariableType.DAO;
 			}
 			;
 
 assignment returns [Object obj, String lh]		
-			: lharg '=' rharg
+			: lharg Equals rharg
 			{
 				$obj = $rharg.obj;
 				$lh = $lharg.text;
@@ -85,9 +106,9 @@ assignment returns [Object obj, String lh]
 			{
 				String oper = $unaryOP.text;
 				oper = oper.substring(0, oper.length() - 1);
-				if ($lharg.obj == null) {
-					NoViableAltException ex = trans.getException("'" + $lharg.text + "' has not been defined.",_localctx,this);
-					_errHandler.reportError(this, (RecognitionException) ex );
+				if (trans.isVariable($lharg.text) == false) {
+					RecognitionException ex = trans.errorHandler(NOT_DEFINED, _localctx, this);
+					_errHandler.reportError(this, ex );
 				}else{
 					$obj = om.getExpression($lharg.obj, oper, $rharg.obj);								
 					trans.assignVariable($lharg.text, $obj);
@@ -95,86 +116,55 @@ assignment returns [Object obj, String lh]
 			}
 			;
 
-arithmetic returns [VariableType varType]
-			: 'double'
-			{
-				$varType = VariableType.DOUBLE;
-			}
-			| 'long'
-			{
-				$varType = VariableType.LONG;
-			}
-			;
 
-lexical	returns [VariableType varType]
-			: 'string' 
-			{
-				$varType = VariableType.STRING;
-			}
-			;
-
-logical	returns [VariableType varType]
-			: 'boolean'
-			{
-				$varType = VariableType.BOOLEAN;
-			}
-			;
-
-dateType returns [VariableType varType]
-			: 'date'
-			{
-				$varType = VariableType.DATE;
-			}
-			;
-
-
-assignmentOp	: '='		// Equals
+assignmentOp	: Equals
 				;
 
-unaryOP			: '+='		// Plus Equals
-				| '-='		// Minus Equals
-				| '*='		// Multiply Equals
-				| '/='		// Divide Equals
-				| '%='		// Modulo Equals
-				| '^='		// Exponent Equals
+unaryOP			: PlusEquals
+				| MinusEquals
+				| MultiplyEquals
+				| DivideEquals
+				| ModuloEquals
+				| ExponentEquals
 				;
+				
 expressionOp	: arithExpressOp
 				| bitwiseExpressOp
 				;
 
-arithExpressOp	: '*'
-				| '/'
-				| '+'
-				| '-'
-				| '%'
-				| '^'
+arithExpressOp	: Multiply
+				| Divide
+				| Plus
+				| Minus
+				| Modulo
+				| Exponent
 				;
 				
-bitwiseExpressOp  : '&'
-				| '|'
-				| '!'
+bitwiseExpressOp  
+				: And
+				| Or
+				| Not
 				;
 
-comparisonOp	: '=='
-				| '<'
-				| '<='
-				| '>'
-				| '>='
-				| '!='
+comparisonOp	: IsEqualTo
+				| IsLessThan
+				| IsLessThanOrEqualTo
+				| IsGreaterThan
+				| IsGreaterThanOrEqualTo
+				| IsNotEqualTo
 				;
 				
-logicExpressOp	: '&&'
-				| '||'
-				| '^^'
+logicExpressOp	: AndExpression
+				| OrExpression
+				| ExclusiveOrExpression
 				;
 
 rharg returns[Object obj]		
 			: lh=rharg expressionOp rh=rharg
 			{
 				if (trans.isMatched($lh.obj, $rh.obj) == false) {
-					
-					NoViableAltException ex = trans.getException("'" + $lh.text + "' and ''" + $rh.text + "' are different types.",_localctx,this);
-					_errHandler.reportError(this, (RecognitionException) ex );
+					RecognitionException ex = trans.errorHandler(CAST_EXCEPT, _localctx, this);
+					_errHandler.reportError(this, ex );
 				}else{
 					$obj = om.getExpression($lh.obj, $expressionOp.text, $rh.obj);
 				}
@@ -182,9 +172,8 @@ rharg returns[Object obj]
 			| '(' lh=rharg expressionOp rh=rharg ')'
 			{
 				if (trans.isMatched($lh.obj, $rh.obj) == false) {
-					
-					NoViableAltException ex = trans.getException("'" + $lh.text + "' and ''" + $rh.text + "' are different types.",_localctx,this);
-					_errHandler.reportError(this, (RecognitionException) ex );
+					RecognitionException ex = trans.errorHandler(CAST_EXCEPT, _localctx, this);
+					_errHandler.reportError(this, ex );
 				}else{
 					$obj = om.getExpression($lh.obj, $expressionOp.text, $rh.obj);
 				}
@@ -192,19 +181,20 @@ rharg returns[Object obj]
 			| var
 			{
 				
-				$obj = trans.getValue($var.name);
-				if ($obj == null) {
-					NoViableAltException ex = trans.getException("'" + $var.name + "' is not defined.",_localctx,this);
-					_errHandler.reportError(this, (RecognitionException) ex );
+				if (trans.isVariable($var.name) == false) {
+					RecognitionException ex = trans.errorHandler(NOT_DEFINED, _localctx, this);
+					_errHandler.reportError(this, ex );
 					
 				}
+				$obj = trans.getValue($var.name);
+				
 			}
 			| literal
 			{
 				$obj = $literal.obj;
 				if ($obj == null) {
-					NoViableAltException ex = trans.getException("'" + $literal.text + "' is malformed.",_localctx,this);
-					_errHandler.reportError(this, (RecognitionException) ex );
+					RecognitionException ex = trans.errorHandler(MALFORMED_EXP, _localctx, this);
+					_errHandler.reportError(this, ex );
 				}
 			}
 			| assignmentCommands
@@ -228,16 +218,16 @@ evaluation returns [boolean result]
 						try {
 							trans.loadBlock($rfn.name);
 						} catch (IOException e) {
-							NoViableAltException ex = trans.getException("Can not load file: '" + $rfn.name + "'",_localctx,this);
-							_errHandler.reportError(this, (RecognitionException) ex );
+							RecognitionException ex = trans.errorHandler(CANNOT_LOAD_FILE, _localctx, this);
+							_errHandler.reportError(this, ex );
 							
 						}
 					}else if(_localctx.lfn != null){
 						try {
 							trans.loadBlock($lfn.name);
 						} catch (IOException e) {
-							NoViableAltException ex = trans.getException("Can not load file: '" + $lfn.name + "'", _localctx,this);
-							_errHandler.reportError(this, (RecognitionException) ex );
+							RecognitionException ex = trans.errorHandler(CAST_EXCEPT, _localctx, this);
+							_errHandler.reportError(this, ex );
 							
 						}
 					}
@@ -281,101 +271,26 @@ eval returns [boolean result]
 				}
 				;
 
-/*
-eval returns [boolean result]	
-				: lh=literal comparisonOp rh=literal
-				{
-					$result = om.evaluateExpression($lh.obj, $comparisonOp.text, $rh.obj);
-				}
-				| var comparisonOp literal
-				{
-					if (trans.isVariable($var.name) == false) {
-						
-						Exception ex = trans.getException("'" + $var.name + "' has not been defined.",_localctx, this );
-						_errHandler.reportError(this, (RecognitionException) ex );					
-					}else{
-						Object lh = trans.getValue($var.name);
-						$result = om.evaluateExpression(lh, $comparisonOp.text, $literal.obj);
-					}
-				}
-				| literal comparisonOp var
-				{
-					if (trans.isVariable($var.name) == false) {
-						
-						Exception ex = trans.getException("'" + $var.name + "' has not been defined.",_localctx, this);
-						_errHandler.reportError(this, (RecognitionException) ex );
-					}else{
-						Object rh = trans.getValue($var.name);
-						$result = om.evaluateExpression($literal.obj, $comparisonOp.text, rh);
-					}
-				}
-				| lv=var comparisonOp rv=var
-				{
-					Object l = trans.getValue($lv.name);
-					Object r = trans.getValue($rv.name);
-					$result = om.evaluateExpression(l, $comparisonOp.text, r);
-				}
-				;
-*/
+
 assignmentCommands returns [Object obj] 
-			: GetAmount 
-			{
-				$obj = trans.getAmount();
-			}
-			| GetTax
-			{
-				$obj = trans.getTax();
-			}
-			| GetDescription
-			{
-				$obj = trans.getDescription();
-			}
-			| GetItemPrice '(' stringArg ')'
-			{
-				$obj = trans.getItemPrice($stringArg.string);
-			}
-			| GetItemTax '(' stringArg ')'
-			{
-				$obj = trans.getItemTax($stringArg.string);
-			}
-			| GetItemQty '(' stringArg ')'
-			{
-				$obj = trans.getItemQty($stringArg.string);
-			}
-			| GetTotalItems 
-			{
-				$obj = trans.getTotalItems();
-			}
-			| GetShipCharges
-			{
-				$obj = trans.getShipCharges();
-			}
-			| GetAddedCharges
-			{
-				$obj = trans.getAddedCharges();
-			}
-			| GetBalance '(' stringArg ')'
+			:  GetBalance '(' stringArg ')'
 			{
 				$obj = trans.getBalance($stringArg.string);
-			}
-			| GetLowestItem
-			{
-				$obj = trans.getLowestItem();
-			}
-			| GetHighestItem
-			{
-				$obj = trans.getHighestItem();
 			}
 			|	GetVariableType '(' var ')'
 			{
 				
 				if (trans.isVariable($var.name) == false) {
-					Exception ex = trans.getException("'" + $var.name  + "' has not been declared",_localctx, this);
+					Exception ex = trans.errorHandler(NOT_DEFINED, _localctx, this);
 					_errHandler.reportError(this, (RecognitionException) ex );
 					
 				}else{
 					$obj = trans.getVariableType($var.name);
 				}
+			}
+			| GetDescription
+			{
+				$obj = trans.getDescription();
 			}
 			| Today
 			{ 
@@ -383,8 +298,8 @@ assignmentCommands returns [Object obj]
 					SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 					$obj = (Date) sdf.parse(sdf.format(new Date()));
 				}catch (ParseException pe){
-					Exception ex = trans.getException("Invalid date format.",_localctx, this);
-					_errHandler.reportError(this, (RecognitionException) ex );
+					RecognitionException ex = trans.errorHandler(INVALID_DATE, _localctx, this);
+					_errHandler.reportError(this, ex );
 				}
 			}
 			| GetDays '(' startPeriod=dateArg ',' endPeriod=dateArg ')'
@@ -392,28 +307,56 @@ assignmentCommands returns [Object obj]
 				$obj = (Double) trans.getDays($startPeriod.date, $endPeriod.date );
 			}
 			| DayOfTheWeek '(' dateArg ')'
-			{
-				$obj = om.dayOfTheWeek($dateArg.date);
+			{	
+				$obj = trans.dayOfTheWeek($dateArg.date);
 			}
-			| GetRate '(' stringArg ')'
+			| GetCalendarDay '(' dateArg ')'
 			{
-				$obj = trans.getRate($stringArg.string);
+				$obj=trans.getCalendarDay($dateArg.date);
 			}
-			| GetBaseCurrency
+			| GetMonth '(' dateArg ')'
 			{
-				$obj = trans.getBaseCurrency();
+				$obj=trans.getMonth($dateArg.date);
 			}
-			| LastRefreshDate
+			| GetYear '(' dateArg ')'
 			{
-				$obj = trans.lastRefreshDate();
+				$obj=trans.getYear($dateArg.date);
+			}
+			| Import '(' stringArg ')' /* Import( path ) */
+			{
+				$obj=trans.importClass($stringArg.string);
+				if ($obj == null) {
+					RecognitionException ex = trans.errorHandler(6, _localctx, this);
+				}
+				
+			}
+			| Lookup '(' daoLiteral ',' sql=stringArg ')' /* Lookup( table, SQL) */
+			{
+				$obj=trans.lookup($daoLiteral.text, $sql.string);
+			}
+			| List '(' daoLiteral ',' sql=stringArg ')' /* List( table, SQL) */
+			{
+				trans.list($daoLiteral.text, $sql.string);
+			}
+			| invocation 
+			{
+				if ($invocation.args != null) {
+					$obj = trans.invokeMethod($invocation.obj, $invocation.method, $invocation.args);
+				}else{
+					$obj = trans.invokeMethod($invocation.obj, $invocation.method);
+				}
+				if ($obj == null) {
+					RecognitionException ex = trans.errorHandler(6, _localctx, this);
+				}
 			}
 			;
+			
 
 
 command 	: Print '(' rharg ')' 
 			{
 				if ($rharg.obj == null) {
-					Exception ex = trans.getException("Malformed assignment.",_localctx, this);
+					Exception ex = trans.errorHandler(MALFORMED_EXP, _localctx, this);
 					_errHandler.reportError(this, (RecognitionException) ex );
 				}else{
 					System.out.println($rharg.obj);
@@ -431,34 +374,6 @@ command 	: Print '(' rharg ')'
 			{
 				trans.ledger($debitOrCredit.c, $amtArg.amt, $acc.string, $desc.string );
 			}
-			| AddStock '(' stringArg ',' numberArg ')'
-			{
-				trans.addStock($stringArg.string, $numberArg.num);
-			}
-			| DepleteStock '(' stringArg ',' numberArg ')'
-			{
-				trans.depleteStock($stringArg.string, $numberArg.num);
-			}
-			| SetShipCharges '(' amtArg ')'
-			{
-				trans.setShipCharges($amtArg.amt);
-			}
-			| SetAddedCharges '(' amtArg ')'
-			{
-				trans.setAddedCharges($amtArg.amt);
-			}
-			| CommitStock '(' stringArg ',' numberArg ')'
-			{
-				trans.commitStock($stringArg.string, $numberArg.num);
-			}
-			| CommitReceipt
-			{
-				trans.commitReceipt();
-			}
-			| DepleteReceipt
-			{
-				trans.depleteReceipt();
-			}
 			| Alias '(' account=stringArg ',' name=stringArg ')'
 			{
 				trans.putMap($account.string, $name.string);
@@ -467,11 +382,54 @@ command 	: Print '(' rharg ')'
 			{
 				trans.mapFile($stringArg.string);
 			}
+			| invocation
+			{	
+				if ($invocation.args != null) {
+					trans.invokeMethod($invocation.obj, $invocation.method, $invocation.args);
+				}else{
+					trans.invokeMethod($invocation.obj, $invocation.method, null);
+				}
+			}
+			;
+
+invocation returns [Object obj, String method, Object[] args]
+			: o=objectLiteral '.' m=identifier '('argumentList? ')'
+			{
+				$obj = trans.getValue($o.text);
+				if ($obj == null) {
+					RecognitionException ex = trans.errorHandler(INVALID_OBJECT, _localctx, this);
+					_errHandler.reportError(this, ex );
+				}
+				$method = $m.text;				
+				$args = $argumentList.argList.toArray();
+			}
+			| o=objectLiteral '.' m=identifier '()'
+			{
+				$obj = trans.getValue($o.text);
+				if ($obj == null) {
+					RecognitionException ex = trans.errorHandler(INVALID_OBJECT, _localctx, this);
+					_errHandler.reportError(this, ex );
+				}
+				$method = $m.text;				
+				$args = null;
+				
+			}
+			;
+			
+argumentList returns [List <Object> argList]
+	@init{$argList = new ArrayList<Object>();}
+
+			: rharg  {$argList.add($rharg.obj);} (',' rharg {$argList.add($rharg.obj);})*
 			;
 
 amtArg	returns [Double amt]
 			: rharg
 			{
+				if ($rharg.obj == null || $rharg.obj instanceof Double == false) {
+					RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
+					_errHandler.reportError(this, ex );
+					
+				}
 				$amt = (Double) $rharg.obj;
 			}
 			;
@@ -479,6 +437,11 @@ amtArg	returns [Double amt]
 stringArg returns [String string] 
 			: rharg
 			{
+				if ($rharg.obj == null || $rharg.obj instanceof String == false) {
+					RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
+					_errHandler.reportError(this, ex );
+					
+				}
 				$string = (String) $rharg.obj;
 			}
 			;
@@ -486,6 +449,11 @@ stringArg returns [String string]
 numberArg	returns [Long num]
 			: rharg
 			{
+				if ($rharg.obj == null || $rharg.obj instanceof Long == false) {
+					RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
+					_errHandler.reportError(this, ex );
+					
+				}
 				$num = (Long) $rharg.obj;
 			}
 			;
@@ -493,10 +461,15 @@ numberArg	returns [Long num]
 dateArg	returns [Date date]
 			: rharg
 			{
+				if ($rharg.obj == null || $rharg.obj instanceof Date == false) {
+					RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
+					_errHandler.reportError(this, ex );
+					
+				}
 				$date = (Date) $rharg.obj;
+				
 			}
 			;
-
 
 debitOrCredit returns [char c]	: charLiteral
 				{
@@ -505,9 +478,7 @@ debitOrCredit returns [char c]	: charLiteral
 				;
 
 literal	returns [Object obj]	
-			: stringLiteral
-			{$obj = (String) trans.stripQuotes($stringLiteral.text);}
-			| numericLiteral
+			: numericLiteral
 			{
 				$obj = (Long) trans.getLong($numericLiteral.text);
 			}
@@ -535,13 +506,15 @@ literal	returns [Object obj]
 				$obj = (Double) result;
 
 			}
+			| stringLiteral
+			{$obj = (String) trans.stripQuotes($stringLiteral.text);}
 			|	dateLiteral
 			{
 					try {
 						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 						$obj = (Date) sdf.parse($dateLiteral.text);
-					}catch(ParseException pe){	
-						Exception ex = trans.getException("Invalid date format.",_localctx, this);
+					}catch(ParseException pe){
+						Exception ex = trans.errorHandler(2, _localctx, this);
 						_errHandler.reportError(this, (RecognitionException) ex );
 					}
 			}
@@ -558,20 +531,26 @@ fileName returns[String name]
 				}
 			}
 			;
+			
+
 
 charLiteral		: ('D' | 'C');
 
-numericLiteral	: Long;
+numericLiteral	: Number ;
 
-doubleLiteral : Double;
+doubleLiteral	: Decimal ;
 
-percentLiteral	: Percentage;
+percentLiteral	: Percentage ;
 			
-booleanLiteral	: Boolean;
+booleanLiteral	: Boolean ;
 
 stringLiteral 	: String ;
 
 dateLiteral		: Date ;
+
+objectLiteral	: Identifier ;
+
+daoLiteral		: Identifier ;
 
 //Below are Token definitions
 /*************************************************************************************
@@ -579,55 +558,98 @@ dateLiteral		: Date ;
  ** Token Definitions 
  *************************************************************************************
  *************************************************************************************/
+/******************************************************************
+ * Data Types
+ ******************************************************************/
+DecimalType 	: 'decimal' ;
+NumberType 		: 'number' ;
+StringType 		: 'string' ;
+BooleanType 	: 'boolean' ;
+DateType 		: 'date' ;
+ObjectType 		: 'object' ;
+DaoType 		: 'dao' ;
+/******************************************************************
+ * Assignmnt operator
+ ******************************************************************/
+ Equals			: '=' ;
+ 
+ /*****************************************************************
+  * Unary operators
+  *****************************************************************/
+PlusEquals		: '+=' ;
+MinusEquals 	: '-=' ;
+MultiplyEquals	: '*=' ;
+DivideEquals	: '/=' ;
+ModuloEquals	: '%=' ;
+ExponentEquals	: '^=' ;
+
+/*****************************************************************
+ * Binary operators
+ *****************************************************************/
+ Plus			: '+' ;
+ Minus			: '-' ;
+ Multiply		: '*' ;
+ Divide			: '/' ;
+ Modulo			: '%' ;
+ Exponent		: '^' ;
+ 
+ /*************************************************************** 
+  * Bitwise operators
+  ***************************************************************/
+  And			: '&' ;
+  Or			: '|' ;
+  Not			: '!' ;
+  
+ /*************************************************************
+  * Compariso operators
+  *************************************************************/
+  IsEqualTo					: '==' ;
+  IsLessThan				: '<'  ;
+  IsLessThanOrEqualTo		: '<=' ;
+  IsGreaterThan				: '>'  ;
+  IsGreaterThanOrEqualTo	: '>=' ;
+  IsNotEqualTo				: '!=' ;
+   
+ /*************************************************************
+  * Expression operators
+  *************************************************************/
+  AndExpression			: '&&' ;
+  OrExpression			: '||' ;
+  ExclusiveOrExpression	: '^^' ;
 
 // Reserve words (Assignment Commands)
-GetAmount		: 'getAmount';
-GetTax			: 'getTax';
-GetDescription	: 'getDescription';
-GetItemPrice	: 'getItemPrice';
-GetItemTax		: 'getItemTax';
-GetItemQty		: 'getItemQty';
-GetTotalItems	: 'getTotalItems';
-GetShipCharges  : 'getShipCharges';
-GetAddedCharges	: 'getAddedCharges';
 GetBalance		: 'getBalance';
-GetLowestItem 	: 'getLowestItem';
-GetHighestItem	: 'getHighestItem';
 GetVariableType	: 'getVariableType' ;
-CommitReceipt	: 'commitReceipt';
-DepleteReceipt	: 'depleteReceipt' ;
+GetDescription  : 'getDescription' ;
 Today			: 'today';
 GetDays			: 'getDays' ;
 DayOfTheWeek	: 'dayOfTheWeek' ;
-GetRate			: 'getRate' ;
-GetBaseCurrency	: 'getBaseCurrency' ;
-LastRefreshDate	: 'lastRefreshDate' ;
-Alias			: 'alias' ;
-MapFile			: 'mapFile' ;
+GetCalendarDay  : 'getCalendarDay' ;
+GetMonth		: 'getMonth' ;
+GetYear			: 'getYear' ;
+Import			: 'import'	;
+Lookup			: 'lookup'	;
+List			: 'list' ;
 
 
 // Reserve words (Commands)
 Credit			: 'credit';
 Debit			: 'debit';
 Ledger			: 'ledger';
-AddStock		: 'addStock';
-DepleteStock	: 'depleteStock';
-SetTax			: 'setTax';
-SetShipCharges	: 'setShipCharges';
-SetAddedCharges : 'setAddedCharges';
-CommitStock		: 'commitStock' ;
+Alias			: 'alias' ;
+MapFile			: 'mapFile' ;
 
 IfStatement	: 'if';
 Else		: 'else';
 Print		: 'print';
 
-Percentage	: (Sign)? Digit+ ('.' Digit+)? '%' ;
+Percentage	: (Sign)? Digit+ (Dot Digit+)? '%' ;
 
 Boolean		: 'true' | 'false';
 
-Long		: Sign? Digit+;
+Number			: Sign? Digit+;
 
-Double		: Sign? Digit+ '.' Digit*;
+Decimal		: Sign? Digit+ Dot Digit*;
 
 Date		: Year '-' Month '-' Day;
 
@@ -660,8 +682,13 @@ Nondigit
 
 fragment
 Digit
-    :   [0-9]
+    :  [0-9]
     ;
+    
+fragment
+Digits
+	: [-+]?[0-9]+
+	;
 
 fragment
 Year
@@ -677,8 +704,11 @@ Day
 
 fragment
 Sign
-    :   '+' | '-'
+    :   Plus | Minus
     ;
+fragment Dot : '.';
+
+    
 fragment
 SCharSequence
     :   SChar+
@@ -704,14 +734,6 @@ SimpleEscapeSequence
     :   '\\' ['"?abfnrtv\\]
     ;
 
-
-
-// ignore the lines generated by c preprocessor                                   
-// sample line : '#line 1 "/home/dm/files/dk1.h" 1'                           
-LineAfterPreprocessing
-    :   '#line' Whitespace* ~[\r\n]*
-        -> skip
-    ;  
 ExtendedAscii
 	: [\x80-\xfe]+
 	-> skip
