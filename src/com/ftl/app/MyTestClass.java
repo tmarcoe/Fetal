@@ -10,11 +10,11 @@ public class MyTestClass {
 		return Long.valueOf(5);
 	}
 	
-	public double getFive(Double five) {
+	public Long getFive(long five) {
 		System.out.println("It's Five!!!");
 		return five;
 	}
-	public double multiply(Double a, Double b) {
+	public double multiply(double a, long b) {
 		return a * b;
 	}
 }

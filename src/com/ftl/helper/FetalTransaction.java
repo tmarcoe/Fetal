@@ -27,6 +27,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.ClassUtils;
 import org.xml.sax.SAXException;
 
 import com.ftl.derived.FetalLexer;
@@ -337,11 +338,13 @@ public abstract class FetalTransaction {
 		}else{
 			args = null;
 		}
-
+		
 		try {
-			
 			if (args != null) {
-				m = obj.getClass().getMethod(method, cls );
+				m = searchForMethod(obj.getClass(), method, args);
+				if (m == null) throw new NoSuchMethodException("Error: '" + 
+																obj.getClass().getName() + "." + method + "()" +
+																"' does not exist or it as a wrong argument signature.");
 				o = m.invoke(obj, args);
 			}else {
 				m = obj.getClass().getMethod(method, null);
@@ -355,7 +358,78 @@ public abstract class FetalTransaction {
 		
 		return o;
 	}
+	
+	private Method searchForMethod( Class<?> clss, String name, Object... parms ) {
+	    Method[] methods = clss.getMethods();
+	    for( int i = 0; i < methods.length; i++ ) {
+	        // Has to be named the same of course.
+	        if( !methods[i].getName().equals( name ) )
+	            continue;
 
+	        Class<?>[] types = methods[i].getParameterTypes();
+
+	        // Does it have the same number of arguments that we're looking for.
+	        if( types.length != parms.length )
+	            continue;
+
+	        // Check for type compatibility
+	        if( areTypesCompatible( types, parms ) )
+	            return methods[i];
+	        }
+	    return null;
+	}
+	
+	private boolean areTypesCompatible( Class<?>[] types, Object[] parms) {
+		boolean result = true;
+		
+		if (parms != null ) {
+			for (int i=0; i < types.length; i++) {
+				if (ClassUtils.isAssignable(types[i], parms[i].getClass()) == false) {
+					types[i] = autoBox(types[i]);
+					if (ClassUtils.isAssignable(types[i], parms[i].getClass()) == false) {
+						result = false;
+						break;
+					}
+				}
+			}
+		}
+		
+		return result;
+	}
+	private Class<?> autoBox(Class<?> cls) {
+		Class<?> result = null;
+		if (cls == double.class) {
+			result = java.lang.Double.class;
+		}
+		if (cls == long.class) {
+			result = java.lang.Long.class;
+		}
+		if (cls == boolean.class)  {
+			result = java.lang.Boolean.class;
+		}
+		if (cls == byte.class) {
+			result = java.lang.Byte.class;
+		}
+
+		if (cls == char.class) {
+			result = java.lang.Character.class;
+		}
+
+		if (cls == float.class) {
+			result = java.lang.Float.class;
+		}
+
+		if (cls == int.class) {
+			result = java.lang.Integer.class;
+		}
+
+		if (cls == short.class) {
+			result = java.lang.Short.class;
+		}
+
+		return result;
+	}
+	
 	public Double getDays(Date date, Date date2) {
 		double diffDate =  (date2.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
 
@@ -444,8 +518,11 @@ public abstract class FetalTransaction {
 			
 		} catch (RuntimeException e) {
 			if (errMsg.length() == 0) {
-				errMsg = e.getMessage();
+				errMsg = e.toString();
+				logger.error(errMsg);
 			}
+			throw new RuntimeException(errMsg);
+
 		}
 	}
 
@@ -464,6 +541,10 @@ public abstract class FetalTransaction {
 		try {
 			blockCtx = parser.block(this);
 		} catch (RuntimeException e) {
+			if (errMsg.length() == 0) {
+				errMsg = e.toString();
+				logger.error(errMsg);
+			}
 			throw new RuntimeException(errMsg);
 		}
 
@@ -483,6 +564,10 @@ public abstract class FetalTransaction {
 		try {
 			transCtx = parser.transaction(this);
 		} catch (RuntimeException e) {
+			if (errMsg.length() == 0) {
+				errMsg = e.toString();
+				logger.error(errMsg);
+			}
 			throw new RuntimeException(errMsg);
 		}
 	}

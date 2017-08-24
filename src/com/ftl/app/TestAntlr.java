@@ -21,7 +21,7 @@ public class TestAntlr {
 		
 		TransactionService trans = new TransactionService();
 		trans.setDebugMode(false);
-		trans.initTransaction("file:///Repository/config/fetal.properties");
+		trans.initTransaction("file:///home/donzalma/public_html/config/fetal.properties"); 
 
         try {
     		trans.setDescription("Purchase of inventory (SKU #9999999)");

@@ -18,8 +18,12 @@ public class FetalErrorListener extends BaseErrorListener {
 							Object offendingSymbol, 
 							int line, int charPositionInLine, 
 							String msg, RecognitionException e){
+		String exception = "Unknown Exception";
 		
-		msg = e.toString() + ": Error @" + line + "," + charPositionInLine;
+		if (e != null) {
+			exception = e.toString();
+		}
+		msg = exception + ": Error @" + line + "," + charPositionInLine;
 		logger.error(msg);	
 	}
 	@Override

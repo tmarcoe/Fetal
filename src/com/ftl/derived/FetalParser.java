@@ -1019,12 +1019,13 @@ public class FetalParser extends Parser {
 				((RhargContext)_localctx).var = var();
 
 								
-								((RhargContext)_localctx).obj =  trans.getValue(((RhargContext)_localctx).var.name);
-								if (_localctx.obj == null) {
+								if (trans.isVariable(((RhargContext)_localctx).var.name) == false) {
 									RecognitionException ex = trans.errorHandler(NOT_DEFINED, _localctx, this);
 									_errHandler.reportError(this, ex );
 									
 								}
+								((RhargContext)_localctx).obj =  trans.getValue(((RhargContext)_localctx).var.name);
+								
 							
 				}
 				break;
