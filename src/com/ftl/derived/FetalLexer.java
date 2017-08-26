@@ -126,7 +126,7 @@ public class FetalLexer extends Lexer {
 		ObjectMath	om;
 		private static final int NOT_DEFINED=0, MALFORMED_EXP=1, CAST_EXCEPT=2, CANNOT_LOAD_FILE=3,
 								 INVALID_DATE=4, CANNOT_LOAD_OBJECT=5, CANNOT_INVOKE_METHD=6, INVALID_OBJECT=7,
-								 INVALID_ARG=8; 
+								 INVALID_ARG=8, RECORD_NOT_FOUND=9; 
 
 
 	public FetalLexer(CharStream input) {

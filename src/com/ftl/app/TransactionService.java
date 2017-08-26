@@ -96,6 +96,7 @@ public class TransactionService extends FetalTransaction {
 	@Override
 	public List<Object> list( String sql, Object... args) {
 		String format = "list( " + sql + " )\n";
+		format = translateFormat(format);
 		System.out.printf(format, args);
 
 		return null;
@@ -104,16 +105,17 @@ public class TransactionService extends FetalTransaction {
 	@Override
 	public Object lookup(String sql, Object... args) {
 		String format = "lookup( " + sql + " )\n";
+		format = translateFormat(format);
 		System.out.printf(format, args);
 		
 		return null;
 	}
 
 	@Override
-	public Object update(String sql, Object... args) {
+	public void update(String sql, Object... args) {
 		String format = "update( " + sql + " )\n";
+		format = translateFormat(format);
 		System.out.printf(format, args);
-		
-		return null;
+
 	}
 }

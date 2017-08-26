@@ -71,7 +71,7 @@ public abstract class FetalTransaction {
 	
 	final String[] errorCode = {"Variable Not Defined", "Malformed Expression", "Type cast exception", "Cannot load file", 
 								"Invalid date format", "Cannot load object", "Cannot invoke method", "Invalid object",
-								"Invalid argument"};
+								"Invalid argument", "Record not found"};
 
 	public void handleError(String msg) {
 		errorCount++;
@@ -465,7 +465,23 @@ public abstract class FetalTransaction {
 		
 		return Long.valueOf(String.valueOf(c.get(Calendar.YEAR)));		
 	}
-
+	protected String translateFormat(String format) {
+		StringBuilder sb = new StringBuilder(format);
+		int ndx = 0;
+		while ((ndx = sb.indexOf("{")) != -1) {
+			if (sb.charAt(ndx + 1) == 'F') {
+				sb.replace(ndx, ndx + 1, "'%t");				
+				sb.replace(ndx + 4, ndx + 5, "'");
+			}else if (sb.charAt(ndx + 1) == 's') {
+				sb.replace(ndx, ndx + 1, "'%");				
+				sb.replace(ndx + 3, ndx + 4, "'");
+			}else {
+				sb.replace(ndx, ndx + 1, "%");
+				sb.deleteCharAt(ndx + 2);
+			}
+		}
+		return sb.toString();
+	}
 	/*******************************************************************************
 	 * This is for debug only! It lists all declared variables and their values.
 	 *******************************************************************************/
@@ -597,7 +613,7 @@ public abstract class FetalTransaction {
 	 *************************************************************************************/
 
 	public abstract Object lookup(String sql, Object...args);
-	public abstract Object update(String sql, Object...args);
+	public abstract void update(String sql, Object...args);
 	public abstract List<Object> list(String sql, Object...args);
 
 }
