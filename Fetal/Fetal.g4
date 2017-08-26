@@ -330,13 +330,17 @@ assignmentCommands returns [Object obj]
 				}
 				
 			}
-			| Lookup '(' daoLiteral ',' sql=stringArg ')' /* Lookup( table, SQL) */
+			| Lookup '(' sql=stringArg ',' argumentList ')' /* Lookup( table, SQL) */
 			{
-				$obj=trans.lookup($daoLiteral.text, $sql.string);
+				$obj=trans.lookup($sql.string, $argumentList.argList.toArray());
 			}
-			| List '(' daoLiteral ',' sql=stringArg ')' /* List( table, SQL) */
+			| List '(' sql=stringArg ',' argumentList ')' /* List( table, SQL) */
 			{
-				trans.list($daoLiteral.text, $sql.string);
+				trans.list( $sql.string, $argumentList.argList.toArray());
+			}
+			| Update '(' sql=stringArg ',' argumentList ')'
+			{
+				$obj=trans.update( $sql.string, $argumentList.argList.toArray());
 			}
 			| invocation 
 			{
@@ -629,7 +633,8 @@ GetMonth		: 'getMonth' ;
 GetYear			: 'getYear' ;
 Import			: 'import'	;
 Lookup			: 'lookup'	;
-List			: 'list' ;
+Update			: 'update'	;
+List			: 'list' 	;
 
 
 // Reserve words (Commands)
