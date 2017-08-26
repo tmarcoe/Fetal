@@ -92,15 +92,28 @@ public class TransactionService extends FetalTransaction {
 		System.out.print("Rolled Back");
 	}
 
+
 	@Override
-	public Object lookup(String table, String sql) {
-		System.out.printf("lookup(%s , %s)\n", table, sql);
+	public List<Object> list( String sql, Object... args) {
+		String format = "list( " + sql + " )\n";
+		System.out.printf(format, args);
+
 		return null;
 	}
 
 	@Override
-	public List<Object> list(String table, String sql) {
-		System.out.printf("list(%s , %s)\n", table, sql);
+	public Object lookup(String sql, Object... args) {
+		String format = "lookup( " + sql + " )\n";
+		System.out.printf(format, args);
+		
+		return null;
+	}
+
+	@Override
+	public Object update(String sql, Object... args) {
+		String format = "update( " + sql + " )\n";
+		System.out.printf(format, args);
+		
 		return null;
 	}
 }

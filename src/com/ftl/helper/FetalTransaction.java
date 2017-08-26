@@ -26,8 +26,9 @@ import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
-import org.apache.log4j.Logger;
 import org.apache.commons.lang.ClassUtils;
+import org.apache.log4j.Logger;
+
 import org.xml.sax.SAXException;
 
 import com.ftl.derived.FetalLexer;
@@ -595,7 +596,8 @@ public abstract class FetalTransaction {
 	 * Miscellaneous
 	 *************************************************************************************/
 
-	public abstract Object lookup(String table, String sql);
-	public abstract List<Object> list(String table, String sql);
+	public abstract Object lookup(String sql, Object...args);
+	public abstract Object update(String sql, Object...args);
+	public abstract List<Object> list(String sql, Object...args);
 
 }
