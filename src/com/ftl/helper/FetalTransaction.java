@@ -1,6 +1,7 @@
 package com.ftl.helper;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -515,8 +516,14 @@ public abstract class FetalTransaction {
 	 *******************************************************************************************/
 
 	public void loadRule(String rule) throws IOException, RecognitionException, RuntimeException {
-
-		URL url = new URL(props.getProperty("transactionUrl") + rule);
+		URL url;
+		
+		if (rule.contains("//") ) {
+			url = new URL(rule);
+		}else{
+			url = new URL(props.getProperty("transactionUrl") + rule);
+		}
+		
 		BufferedReader read = new BufferedReader(new InputStreamReader(url.openStream(),"utf-8"));
 
 		ANTLRInputStream in = new ANTLRInputStream(read);
@@ -544,7 +551,13 @@ public abstract class FetalTransaction {
 	}
 
 	public void loadBlock(String rule) throws RecognitionException, IOException {
-		URL url = new URL(props.getProperty("blockUrl") + rule);
+		URL url;
+		
+		if (rule.contains("//") ) {
+			url = new URL(rule);
+		}else{
+			url = new URL(props.getProperty("blockUrl") + rule);
+		}
 		BufferedReader read = new BufferedReader(new InputStreamReader(url.openStream(),"utf-8"));
 
 		ANTLRInputStream in = new ANTLRInputStream(read);
@@ -568,7 +581,14 @@ public abstract class FetalTransaction {
 	}
 
 	public void loadCoupon(String rule) throws IOException {
-		URL url = new URL(props.getProperty("couponUrl") + rule);
+		URL url;
+		
+		if (rule.contains("//") ) {
+			url = new URL(rule);
+		}else{
+			url = new URL(props.getProperty("couponUrl") + rule);
+		}
+		
 		BufferedReader read = new BufferedReader(new InputStreamReader(url.openStream(),"utf-8"));
 
 		ANTLRInputStream in = new ANTLRInputStream(read);
@@ -588,7 +608,22 @@ public abstract class FetalTransaction {
 			throw new RuntimeException(errMsg);
 		}
 	}
-
+	
+	public void loadRule(File file) throws RecognitionException, IOException, RuntimeException {
+		String url = file.toURI().toURL().getPath();
+		loadRule(url);
+	}
+	
+	public void loadCoupon(File file) throws RecognitionException, IOException, RuntimeException {
+		String url = file.toURI().toURL().getPath();
+		loadCoupon(url);
+	}
+	
+	public void loadBlock(File file) throws RecognitionException, IOException, RuntimeException {
+		String url = file.toURI().toURL().getPath();
+		loadBlock(url);
+	}
+	
 	/********************************************************************
 	 * The following are abstract functions.
 	 ********************************************************************/

@@ -35,10 +35,10 @@ public class FetalLexer extends Lexer {
 		IsLessThanOrEqualTo=39, IsGreaterThan=40, IsGreaterThanOrEqualTo=41, IsNotEqualTo=42, 
 		AndExpression=43, OrExpression=44, ExclusiveOrExpression=45, GetBalance=46, 
 		GetVariableType=47, GetDescription=48, Today=49, GetDays=50, DayOfTheWeek=51, 
-		GetCalendarDay=52, GetMonth=53, GetYear=54, Import=55, Lookup=56, Update=57, 
-		List=58, Credit=59, Debit=60, Ledger=61, Alias=62, MapFile=63, IfStatement=64, 
-		Else=65, Print=66, Percentage=67, Boolean=68, Number=69, Decimal=70, Date=71, 
-		Identifier=72, String=73, ExtendedAscii=74, Whitespace=75, Newline=76, 
+		GetCalendarDay=52, GetMonth=53, GetYear=54, Import=55, Lookup=56, List=57, 
+		Credit=58, Debit=59, Ledger=60, Alias=61, MapFile=62, Update=63, Print=64, 
+		IfStatement=65, Else=66, Percentage=67, Boolean=68, Number=69, Decimal=70, 
+		Date=71, Identifier=72, String=73, ExtendedAscii=74, Whitespace=75, Newline=76, 
 		BlockComment=77, LineComment=78;
 	public static String[] modeNames = {
 		"DEFAULT_MODE"
@@ -54,8 +54,8 @@ public class FetalLexer extends Lexer {
 		"IsGreaterThanOrEqualTo", "IsNotEqualTo", "AndExpression", "OrExpression", 
 		"ExclusiveOrExpression", "GetBalance", "GetVariableType", "GetDescription", 
 		"Today", "GetDays", "DayOfTheWeek", "GetCalendarDay", "GetMonth", "GetYear", 
-		"Import", "Lookup", "Update", "List", "Credit", "Debit", "Ledger", "Alias", 
-		"MapFile", "IfStatement", "Else", "Print", "Percentage", "Boolean", "Number", 
+		"Import", "Lookup", "List", "Credit", "Debit", "Ledger", "Alias", "MapFile", 
+		"Update", "Print", "IfStatement", "Else", "Percentage", "Boolean", "Number", 
 		"Decimal", "Date", "Identifier", "String", "ESC", "IdentifierNondigit", 
 		"Nondigit", "Digit", "Digits", "Year", "Month", "Day", "Sign", "Dot", 
 		"SCharSequence", "SChar", "CChar", "SimpleEscapeSequence", "ExtendedAscii", 
@@ -70,8 +70,8 @@ public class FetalLexer extends Lexer {
 		"'!'", "'=='", "'<'", "'<='", "'>'", "'>='", "'!='", "'&&'", "'||'", "'^^'", 
 		"'getBalance'", "'getVariableType'", "'getDescription'", "'today'", "'getDays'", 
 		"'dayOfTheWeek'", "'getCalendarDay'", "'getMonth'", "'getYear'", "'import'", 
-		"'lookup'", "'update'", "'list'", "'credit'", "'debit'", "'ledger'", "'alias'", 
-		"'mapFile'", "'if'", "'else'", "'print'"
+		"'lookup'", "'list'", "'credit'", "'debit'", "'ledger'", "'alias'", "'mapFile'", 
+		"'update'", "'print'", "'if'", "'else'"
 	};
 	private static final String[] _SYMBOLIC_NAMES = {
 		null, null, null, null, null, null, null, null, null, null, null, null, 
@@ -83,8 +83,8 @@ public class FetalLexer extends Lexer {
 		"IsNotEqualTo", "AndExpression", "OrExpression", "ExclusiveOrExpression", 
 		"GetBalance", "GetVariableType", "GetDescription", "Today", "GetDays", 
 		"DayOfTheWeek", "GetCalendarDay", "GetMonth", "GetYear", "Import", "Lookup", 
-		"Update", "List", "Credit", "Debit", "Ledger", "Alias", "MapFile", "IfStatement", 
-		"Else", "Print", "Percentage", "Boolean", "Number", "Decimal", "Date", 
+		"List", "Credit", "Debit", "Ledger", "Alias", "MapFile", "Update", "Print", 
+		"IfStatement", "Else", "Percentage", "Boolean", "Number", "Decimal", "Date", 
 		"Identifier", "String", "ExtendedAscii", "Whitespace", "Newline", "BlockComment", 
 		"LineComment"
 	};
@@ -177,9 +177,9 @@ public class FetalLexer extends Lexer {
 		"\3\64\3\64\3\64\3\65\3\65\3\65\3\65\3\65\3\65\3\65\3\65\3\65\3\65\3\65"+
 		"\3\65\3\65\3\65\3\65\3\66\3\66\3\66\3\66\3\66\3\66\3\66\3\66\3\66\3\67"+
 		"\3\67\3\67\3\67\3\67\3\67\3\67\3\67\38\38\38\38\38\38\38\39\39\39\39\3"+
-		"9\39\39\3:\3:\3:\3:\3:\3:\3:\3;\3;\3;\3;\3;\3<\3<\3<\3<\3<\3<\3<\3=\3"+
-		"=\3=\3=\3=\3=\3>\3>\3>\3>\3>\3>\3>\3?\3?\3?\3?\3?\3?\3@\3@\3@\3@\3@\3"+
-		"@\3@\3@\3A\3A\3A\3B\3B\3B\3B\3B\3C\3C\3C\3C\3C\3C\3D\5D\u01fa\nD\3D\6"+
+		"9\39\39\3:\3:\3:\3:\3:\3;\3;\3;\3;\3;\3;\3;\3<\3<\3<\3<\3<\3<\3=\3=\3"+
+		"=\3=\3=\3=\3=\3>\3>\3>\3>\3>\3>\3?\3?\3?\3?\3?\3?\3?\3?\3@\3@\3@\3@\3"+
+		"@\3@\3@\3A\3A\3A\3A\3A\3A\3B\3B\3B\3C\3C\3C\3C\3C\3D\5D\u01fa\nD\3D\6"+
 		"D\u01fd\nD\rD\16D\u01fe\3D\3D\6D\u0203\nD\rD\16D\u0204\5D\u0207\nD\3D"+
 		"\3D\3E\3E\3E\3E\3E\3E\3E\3E\3E\5E\u0214\nE\3F\5F\u0217\nF\3F\6F\u021a"+
 		"\nF\rF\16F\u021b\3G\5G\u021f\nG\3G\6G\u0222\nG\rG\16G\u0223\3G\3G\7G\u0228"+
@@ -226,9 +226,9 @@ public class FetalLexer extends Lexer {
 		"\2\2U\u013d\3\2\2\2W\u0140\3\2\2\2Y\u0143\3\2\2\2[\u0146\3\2\2\2]\u0149"+
 		"\3\2\2\2_\u0154\3\2\2\2a\u0164\3\2\2\2c\u0173\3\2\2\2e\u0179\3\2\2\2g"+
 		"\u0181\3\2\2\2i\u018e\3\2\2\2k\u019d\3\2\2\2m\u01a6\3\2\2\2o\u01ae\3\2"+
-		"\2\2q\u01b5\3\2\2\2s\u01bc\3\2\2\2u\u01c3\3\2\2\2w\u01c8\3\2\2\2y\u01cf"+
-		"\3\2\2\2{\u01d5\3\2\2\2}\u01dc\3\2\2\2\177\u01e2\3\2\2\2\u0081\u01ea\3"+
-		"\2\2\2\u0083\u01ed\3\2\2\2\u0085\u01f2\3\2\2\2\u0087\u01f9\3\2\2\2\u0089"+
+		"\2\2q\u01b5\3\2\2\2s\u01bc\3\2\2\2u\u01c1\3\2\2\2w\u01c8\3\2\2\2y\u01ce"+
+		"\3\2\2\2{\u01d5\3\2\2\2}\u01db\3\2\2\2\177\u01e3\3\2\2\2\u0081\u01ea\3"+
+		"\2\2\2\u0083\u01f0\3\2\2\2\u0085\u01f3\3\2\2\2\u0087\u01f9\3\2\2\2\u0089"+
 		"\u0213\3\2\2\2\u008b\u0216\3\2\2\2\u008d\u021e\3\2\2\2\u008f\u022c\3\2"+
 		"\2\2\u0091\u0232\3\2\2\2\u0093\u023a\3\2\2\2\u0095\u0244\3\2\2\2\u0097"+
 		"\u0247\3\2\2\2\u0099\u0249\3\2\2\2\u009b\u024b\3\2\2\2\u009d\u024e\3\2"+
@@ -302,22 +302,22 @@ public class FetalLexer extends Lexer {
 		"\7k\2\2\u01af\u01b0\7o\2\2\u01b0\u01b1\7r\2\2\u01b1\u01b2\7q\2\2\u01b2"+
 		"\u01b3\7t\2\2\u01b3\u01b4\7v\2\2\u01b4p\3\2\2\2\u01b5\u01b6\7n\2\2\u01b6"+
 		"\u01b7\7q\2\2\u01b7\u01b8\7q\2\2\u01b8\u01b9\7m\2\2\u01b9\u01ba\7w\2\2"+
-		"\u01ba\u01bb\7r\2\2\u01bbr\3\2\2\2\u01bc\u01bd\7w\2\2\u01bd\u01be\7r\2"+
-		"\2\u01be\u01bf\7f\2\2\u01bf\u01c0\7c\2\2\u01c0\u01c1\7v\2\2\u01c1\u01c2"+
-		"\7g\2\2\u01c2t\3\2\2\2\u01c3\u01c4\7n\2\2\u01c4\u01c5\7k\2\2\u01c5\u01c6"+
-		"\7u\2\2\u01c6\u01c7\7v\2\2\u01c7v\3\2\2\2\u01c8\u01c9\7e\2\2\u01c9\u01ca"+
-		"\7t\2\2\u01ca\u01cb\7g\2\2\u01cb\u01cc\7f\2\2\u01cc\u01cd\7k\2\2\u01cd"+
-		"\u01ce\7v\2\2\u01cex\3\2\2\2\u01cf\u01d0\7f\2\2\u01d0\u01d1\7g\2\2\u01d1"+
-		"\u01d2\7d\2\2\u01d2\u01d3\7k\2\2\u01d3\u01d4\7v\2\2\u01d4z\3\2\2\2\u01d5"+
-		"\u01d6\7n\2\2\u01d6\u01d7\7g\2\2\u01d7\u01d8\7f\2\2\u01d8\u01d9\7i\2\2"+
-		"\u01d9\u01da\7g\2\2\u01da\u01db\7t\2\2\u01db|\3\2\2\2\u01dc\u01dd\7c\2"+
-		"\2\u01dd\u01de\7n\2\2\u01de\u01df\7k\2\2\u01df\u01e0\7c\2\2\u01e0\u01e1"+
-		"\7u\2\2\u01e1~\3\2\2\2\u01e2\u01e3\7o\2\2\u01e3\u01e4\7c\2\2\u01e4\u01e5"+
-		"\7r\2\2\u01e5\u01e6\7H\2\2\u01e6\u01e7\7k\2\2\u01e7\u01e8\7n\2\2\u01e8"+
-		"\u01e9\7g\2\2\u01e9\u0080\3\2\2\2\u01ea\u01eb\7k\2\2\u01eb\u01ec\7h\2"+
-		"\2\u01ec\u0082\3\2\2\2\u01ed\u01ee\7g\2\2\u01ee\u01ef\7n\2\2\u01ef\u01f0"+
-		"\7u\2\2\u01f0\u01f1\7g\2\2\u01f1\u0084\3\2\2\2\u01f2\u01f3\7r\2\2\u01f3"+
-		"\u01f4\7t\2\2\u01f4\u01f5\7k\2\2\u01f5\u01f6\7p\2\2\u01f6\u01f7\7v\2\2"+
+		"\u01ba\u01bb\7r\2\2\u01bbr\3\2\2\2\u01bc\u01bd\7n\2\2\u01bd\u01be\7k\2"+
+		"\2\u01be\u01bf\7u\2\2\u01bf\u01c0\7v\2\2\u01c0t\3\2\2\2\u01c1\u01c2\7"+
+		"e\2\2\u01c2\u01c3\7t\2\2\u01c3\u01c4\7g\2\2\u01c4\u01c5\7f\2\2\u01c5\u01c6"+
+		"\7k\2\2\u01c6\u01c7\7v\2\2\u01c7v\3\2\2\2\u01c8\u01c9\7f\2\2\u01c9\u01ca"+
+		"\7g\2\2\u01ca\u01cb\7d\2\2\u01cb\u01cc\7k\2\2\u01cc\u01cd\7v\2\2\u01cd"+
+		"x\3\2\2\2\u01ce\u01cf\7n\2\2\u01cf\u01d0\7g\2\2\u01d0\u01d1\7f\2\2\u01d1"+
+		"\u01d2\7i\2\2\u01d2\u01d3\7g\2\2\u01d3\u01d4\7t\2\2\u01d4z\3\2\2\2\u01d5"+
+		"\u01d6\7c\2\2\u01d6\u01d7\7n\2\2\u01d7\u01d8\7k\2\2\u01d8\u01d9\7c\2\2"+
+		"\u01d9\u01da\7u\2\2\u01da|\3\2\2\2\u01db\u01dc\7o\2\2\u01dc\u01dd\7c\2"+
+		"\2\u01dd\u01de\7r\2\2\u01de\u01df\7H\2\2\u01df\u01e0\7k\2\2\u01e0\u01e1"+
+		"\7n\2\2\u01e1\u01e2\7g\2\2\u01e2~\3\2\2\2\u01e3\u01e4\7w\2\2\u01e4\u01e5"+
+		"\7r\2\2\u01e5\u01e6\7f\2\2\u01e6\u01e7\7c\2\2\u01e7\u01e8\7v\2\2\u01e8"+
+		"\u01e9\7g\2\2\u01e9\u0080\3\2\2\2\u01ea\u01eb\7r\2\2\u01eb\u01ec\7t\2"+
+		"\2\u01ec\u01ed\7k\2\2\u01ed\u01ee\7p\2\2\u01ee\u01ef\7v\2\2\u01ef\u0082"+
+		"\3\2\2\2\u01f0\u01f1\7k\2\2\u01f1\u01f2\7h\2\2\u01f2\u0084\3\2\2\2\u01f3"+
+		"\u01f4\7g\2\2\u01f4\u01f5\7n\2\2\u01f5\u01f6\7u\2\2\u01f6\u01f7\7g\2\2"+
 		"\u01f7\u0086\3\2\2\2\u01f8\u01fa\5\u00a5S\2\u01f9\u01f8\3\2\2\2\u01f9"+
 		"\u01fa\3\2\2\2\u01fa\u01fc\3\2\2\2\u01fb\u01fd\5\u009bN\2\u01fc\u01fb"+
 		"\3\2\2\2\u01fd\u01fe\3\2\2\2\u01fe\u01fc\3\2\2\2\u01fe\u01ff\3\2\2\2\u01ff"+
