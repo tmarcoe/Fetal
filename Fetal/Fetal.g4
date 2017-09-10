@@ -6,37 +6,86 @@ grammar Fetal;
 @header {
 package com.ftl.derived;
 import com.ftl.helper.*;
+import com.ftl.events.*;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.util.Date;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.Semaphore;
 } 
 @members {
 	FetalTransaction trans;
 	ObjectMath	om;
+	Semaphore semaphore;
 	private static final int NOT_DEFINED=0, MALFORMED_EXP=1, CAST_EXCEPT=2, CANNOT_LOAD_FILE=3,
 							 INVALID_DATE=4, CANNOT_LOAD_OBJECT=5, CANNOT_INVOKE_METHD=6, INVALID_OBJECT=7,
-							 INVALID_ARG=8; 
+							 INVALID_ARG=8, RECORD_NOT_FOUND=9, DEBUG_ERROR=10; 
 }
 transaction[FetalTransaction t]  : 
 			{
 				trans = t;
-				om = new ObjectMath();					
+				om = new ObjectMath();	
+				semaphore = trans.getSemaphore();			
 			} begin statements end
 			;
 
-begin : 'begin' {trans.beginTrans();};
+begin 
+@init{
+	if (semaphore != null) {
+		trans.setLineNum(getCurrentToken().getLine());	
+		trans.getStep().receiveStep(trans);		
+		try {
+			semaphore.acquire();
+		}catch (InterruptedException e){
+			RecognitionException ex = trans.errorHandler(DEBUG_ERROR, _localctx, this);
+			_errHandler.reportError(this, ex );
+			
+		}
+		trans.setPrevLine(trans.getLineNum());
+	}
+}	
+		: 'begin' {trans.beginTrans();};
 
-end		: 'end' {trans.commitTrans();};
+end		
+@init{
+	if (semaphore != null) {
+		trans.setLineNum(getCurrentToken().getLine());	
+		trans.getStep().receiveStep(trans);		
+		try {
+			semaphore.acquire();
+		}catch (InterruptedException e){
+			RecognitionException ex = trans.errorHandler(DEBUG_ERROR, _localctx, this);
+			_errHandler.reportError(this, ex );
+			
+		}
+		trans.setPrevLine(trans.getLineNum());
+	}
+}	
+		: 'end' {trans.commitTrans();};
 
 
 statements	: (statement)+
 			;
          
 
-statement 	: declaration ';'
+statement 
+@init{
+	if (semaphore != null) {
+		trans.setLineNum(getCurrentToken().getLine());	
+		trans.getStep().receiveStep(trans);		
+		try {
+			semaphore.acquire();
+		}catch (InterruptedException e){
+			RecognitionException ex = trans.errorHandler(DEBUG_ERROR, _localctx, this);
+			_errHandler.reportError(this, ex );
+			
+		}
+		trans.setPrevLine(trans.getLineNum());
+	}
+}	
+			: declaration ';'
 			| command ';'
 			| assignment ';'
 			| evaluation
@@ -333,14 +382,15 @@ assignmentCommands returns [Object obj]
 			| Lookup '(' sql=stringArg ',' argumentList ')' /* Lookup( table, SQL) */
 			{
 				$obj=trans.lookup($sql.string, $argumentList.argList.toArray());
+				if ($obj == null) {
+					
+					RecognitionException ex = trans.errorHandler(RECORD_NOT_FOUND, _localctx, this);
+					_errHandler.reportError(this, ex );
+				}
 			}
 			| List '(' sql=stringArg ',' argumentList ')' /* List( table, SQL) */
 			{
 				trans.list( $sql.string, $argumentList.argList.toArray());
-			}
-			| Update '(' sql=stringArg ',' argumentList ')'
-			{
-				$obj=trans.update( $sql.string, $argumentList.argList.toArray());
 			}
 			| invocation 
 			{
@@ -393,6 +443,10 @@ command 	: Print '(' rharg ')'
 				}else{
 					trans.invokeMethod($invocation.obj, $invocation.method, null);
 				}
+			}
+			| Update '(' sql=stringArg ',' argumentList ')'
+			{
+				trans.update( $sql.string, $argumentList.argList.toArray());
 			}
 			;
 
@@ -557,14 +611,8 @@ objectLiteral	: Identifier ;
 daoLiteral		: Identifier ;
 
 //Below are Token definitions
-/*************************************************************************************
- *************************************************************************************
- ** Token Definitions 
- *************************************************************************************
- *************************************************************************************/
-/******************************************************************
- * Data Types
- ******************************************************************/
+
+// Data Types
 DecimalType 	: 'decimal' ;
 NumberType 		: 'number' ;
 StringType 		: 'string' ;
@@ -633,7 +681,6 @@ GetMonth		: 'getMonth' ;
 GetYear			: 'getYear' ;
 Import			: 'import'	;
 Lookup			: 'lookup'	;
-Update			: 'update'	;
 List			: 'list' 	;
 
 
@@ -643,10 +690,11 @@ Debit			: 'debit';
 Ledger			: 'ledger';
 Alias			: 'alias' ;
 MapFile			: 'mapFile' ;
+Update			: 'update'	;
+Print			: 'print';
 
 IfStatement	: 'if';
 Else		: 'else';
-Print		: 'print';
 
 Percentage	: (Sign)? Digit+ (Dot Digit+)? '%' ;
 

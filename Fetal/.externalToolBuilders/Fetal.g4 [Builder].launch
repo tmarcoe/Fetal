@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="com.github.jknack.Antlr4.tool">
+<stringAttribute key="antlr4.arguments" value="-no-listener -no-visitor -encoding UTF-8"/>
+<stringAttribute key="antlr4.grammar" value="\Fetal\Fetal.g4"/>
+<stringAttribute key="antlr4.vmArguments" value=""/>
+<booleanAttribute key="org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND" value="false"/>
+<booleanAttribute key="org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED" value="true"/>
+</launchConfiguration>
