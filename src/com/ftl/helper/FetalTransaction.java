@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.concurrent.Semaphore;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -36,6 +37,7 @@ import com.ftl.derived.FetalLexer;
 import com.ftl.derived.FetalParser;
 import com.ftl.derived.FetalParser.BlockContext;
 import com.ftl.derived.FetalParser.TransactionContext;
+import com.ftl.events.Step;
 
 public abstract class FetalTransaction {
 	private static Logger logger = Logger.getLogger(FetalTransaction.class);
@@ -50,11 +52,26 @@ public abstract class FetalTransaction {
 	private TransactionContext transCtx;
 	private BlockContext blockCtx;
 	private FetalParser fParser;
+	private Semaphore semaphore = null;
+	private int lineNum;
+	private int prevLine;
+	private Step step;
 
 	
-	
+	public Semaphore getSemaphore() {
+		return semaphore;
+	}
+
+	public void setSemaphore(Semaphore semaphore) {
+		this.semaphore = semaphore;
+	}
+
 	public TransactionContext getTransCtx() {
 		return transCtx;
+	}
+	
+	public void setTransCtx(TransactionContext transCtx) {
+		this.transCtx = transCtx;
 	}
 
 	public BlockContext getBlockCtx() {
@@ -64,6 +81,36 @@ public abstract class FetalTransaction {
 	public FetalParser getfParser() {
 		return fParser;
 	}
+	
+	public void setfParser(FetalParser fParser) {
+		this.fParser = fParser;
+	}
+
+	public int getLineNum() {
+		return lineNum;
+	}
+
+	public void setLineNum(int lineNum) {
+		this.lineNum = lineNum;
+	}
+
+	public int getPrevLine() {
+		return prevLine;
+	}
+
+	public void setPrevLine(int prevLine) {
+		this.prevLine = prevLine;
+	}
+
+
+	public Step getStep() {
+		return step;
+	}
+
+	public void setStep(Step step) {
+		this.step = step;
+	}
+
 
 	/***********************************************************************
 	 * Error Handliing
@@ -72,7 +119,7 @@ public abstract class FetalTransaction {
 	
 	final String[] errorCode = {"Variable Not Defined", "Malformed Expression", "Type cast exception", "Cannot load file", 
 								"Invalid date format", "Cannot load object", "Cannot invoke method", "Invalid object",
-								"Invalid argument", "Record not found"};
+								"Invalid argument", "Record not found", "Debug error"};
 
 	public void handleError(String msg) {
 		errorCount++;
@@ -117,12 +164,19 @@ public abstract class FetalTransaction {
 	 * Initialize Transaction This clears all variables and the internal sales
 	 * receipt
 	 *********************************************************************/
-	public void initTransaction(String setupUrl) throws IOException {
+	public void initTransaction(String setupUrl, Semaphore sem) throws IOException {
 		URL url = new URL(setupUrl);
 		InputStream in = url.openStream();
 		Reader reader = new InputStreamReader(in);
 		props = new Properties();
 		props.load(reader);
+		semaphore = sem;
+		if (sem != null) {
+			step = new Step();
+		}
+	}
+	public void initTransaction(String setupUrl) throws IOException {
+		initTransaction(setupUrl, null);
 	}
 	
 	public void closeFetal() {
@@ -549,7 +603,7 @@ public abstract class FetalTransaction {
 
 		}
 	}
-
+/*
 	public void loadBlock(String rule) throws RecognitionException, IOException {
 		URL url;
 		
@@ -579,7 +633,7 @@ public abstract class FetalTransaction {
 		}
 
 	}
-
+*/
 	public void loadCoupon(String rule) throws IOException {
 		URL url;
 		
@@ -611,19 +665,22 @@ public abstract class FetalTransaction {
 	
 	public void loadRule(File file) throws RecognitionException, IOException, RuntimeException {
 		String url = file.toURI().toURL().getPath();
+		url = "File://" + url;
 		loadRule(url);
 	}
 	
 	public void loadCoupon(File file) throws RecognitionException, IOException, RuntimeException {
 		String url = file.toURI().toURL().getPath();
+		url = "File://" + url;
 		loadCoupon(url);
 	}
-	
+	/*
 	public void loadBlock(File file) throws RecognitionException, IOException, RuntimeException {
 		String url = file.toURI().toURL().getPath();
+		url = "File://" + url;
 		loadBlock(url);
 	}
-	
+	*/
 	/********************************************************************
 	 * The following are abstract functions.
 	 ********************************************************************/
