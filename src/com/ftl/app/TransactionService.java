@@ -7,6 +7,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import org.antlr.v4.gui.TreeViewer;
+
 import com.ftl.derived.FetalParser;
 import com.ftl.derived.FetalParser.BlockContext;
 import com.ftl.derived.FetalParser.TransactionContext;
@@ -62,8 +63,7 @@ public class TransactionService extends FetalTransaction {
 	public void showGuiTree(FetalParser parser, TransactionContext tree ) {
         JFrame frame = new JFrame("Fetal Tree");
         JPanel panel = new JPanel();
-        TreeViewer viewr = new TreeViewer(Arrays.asList(
-                parser.getRuleNames()),tree);
+        TreeViewer viewr = new TreeViewer(Arrays.asList(parser.getRuleNames()),tree);
         viewr.setScale(1.5);//scale a little
         panel.add(viewr);
         frame.add(panel);
@@ -76,8 +76,7 @@ public class TransactionService extends FetalTransaction {
 	public void showGuiTree(FetalParser parser, BlockContext tree ) {
         JFrame frame = new JFrame("Block Tree");
         JPanel panel = new JPanel();
-        TreeViewer viewr = new TreeViewer(Arrays.asList(
-                parser.getRuleNames()),tree);
+        TreeViewer viewr = new TreeViewer(Arrays.asList(parser.getRuleNames()),tree);
         viewr.setScale(1.5);//scale a little
         panel.add(viewr);
         frame.add(panel);
