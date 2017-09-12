@@ -7,6 +7,7 @@ grammar Fetal;
 package com.ftl.derived;
 import com.ftl.helper.*;
 import com.ftl.events.*;
+import com.ftl.exceptions.*;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
@@ -259,38 +260,33 @@ lharg returns[Object obj]		: var
 identifier	: Identifier;
 
 evaluation returns [boolean result]	
-				: IfStatement '(' evalExpression ')'  rfn=fileName (Else lfn=fileName)?
-				{
-					$result = $evalExpression.result;
 
-					if ($result == true ) {
-						try {
-							trans.loadBlock($rfn.name);
-						} catch (IOException e) {
-							RecognitionException ex = trans.errorHandler(CANNOT_LOAD_FILE, _localctx, this);
-							_errHandler.reportError(this, ex );
-							
-						}
-					}else if(_localctx.lfn != null){
-						try {
-							trans.loadBlock($lfn.name);
-						} catch (IOException e) {
-							RecognitionException ex = trans.errorHandler(CAST_EXCEPT, _localctx, this);
-							_errHandler.reportError(this, ex );
-							
-						}
-					}
-					
-				}
-				;
+				: IfStatement '(' evalExpression ')'  block[$evalExpression.result] (Else block[!$evalExpression.result])?;
 
 
-block[FetalTransaction t] 
-@init {
-	trans = t;
-	om = new ObjectMath();
-}
-: '{' statements '}' ;
+block[boolean result]
+: 
+{
+
+	if ($result == false) { // If the statement evealuates to false
+		// Consume tokens until the end of block marker
+		while (getCurrentToken().getText().compareTo("}") != 0){
+			consume();
+		}
+		
+		// Set the parser state as if it had executed the tokens
+		_localctx.start = getCurrentToken();
+		_ctx.start = getCurrentToken();
+		setState(220); 
+		_errHandler.sync(this);
+		consume(); // Consume the end of block marker
+		
+		return _localctx; // Exit the rule
+	}
+
+} 
+OpenBracket statements CloseBracket 
+;
 
 
 evalExpression returns [boolean result]	
@@ -695,6 +691,8 @@ Print			: 'print';
 
 IfStatement	: 'if';
 Else		: 'else';
+OpenBracket : '{';
+CloseBracket : '}';
 
 Percentage	: (Sign)? Digit+ (Dot Digit+)? '%' ;
 
@@ -807,6 +805,8 @@ BlockComment
     :   '/*' .*? '*/'
         -> skip
     ;
+
+
 
 LineComment
     :   '//' ~[\r\n]*
