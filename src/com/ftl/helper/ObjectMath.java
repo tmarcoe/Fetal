@@ -5,6 +5,16 @@ import java.util.Date;
 
 public class ObjectMath {
 
+	public Object exponentObject(Object l, Object r) {
+		Object retObj = null;
+		if (l == null || r == null) {
+			return null;
+		}
+
+		retObj = (double) Math.pow(Double.valueOf(String.valueOf(l)), Double.valueOf(String.valueOf(r)));
+		
+		return retObj;
+	}
 	public Object addObject(Object l, Object r) {
 		if (l == null || r == null) {
 			return null;
@@ -174,6 +184,10 @@ public class ObjectMath {
 			
 		case "%":
 			retObj = modObject(l, r);
+			break;
+			
+		case "^":
+			retObj = exponentObject(l,r);
 			break;
 		}
 		

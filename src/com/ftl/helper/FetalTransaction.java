@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -119,7 +120,7 @@ public abstract class FetalTransaction {
 	
 	final String[] errorCode = {"Variable Not Defined", "Malformed Expression", "Type cast exception", "Cannot load file", 
 								"Invalid date format", "Cannot load object", "Cannot invoke method", "Invalid object",
-								"Invalid argument", "Record not found", "Debug error"};
+								"Invalid argument", "Record not found", "Debug error", "Malformed Code Block"};
 
 	public void handleError(String msg) {
 		errorCount++;
@@ -381,7 +382,21 @@ public abstract class FetalTransaction {
 		
 		return obj;
 	}
-	
+	public Set<?> getList(Object obj, String method) {
+		Set<?> result = null;
+
+		Method m;
+		try {
+			m = obj.getClass().getMethod(method, null);
+			result = (Set<?>) m.invoke(obj, null);				
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			logger.error(e.getMessage());
+			
+			return null;
+		}
+
+		return result;
+	}
 	public Object invokeMethod(Object obj, String method, Object... args) {
 		Object o = null;
 		Class<?>[] cls = null;
@@ -520,6 +535,7 @@ public abstract class FetalTransaction {
 		
 		return Long.valueOf(String.valueOf(c.get(Calendar.YEAR)));		
 	}
+	
 	protected String translateFormat(String format) {
 		StringBuilder sb = new StringBuilder(format);
 		int ndx = 0;
@@ -603,37 +619,7 @@ public abstract class FetalTransaction {
 
 		}
 	}
-/*
-	public void loadBlock(String rule) throws RecognitionException, IOException {
-		URL url;
-		
-		if (rule.contains("//") ) {
-			url = new URL(rule);
-		}else{
-			url = new URL(props.getProperty("blockUrl") + rule);
-		}
-		BufferedReader read = new BufferedReader(new InputStreamReader(url.openStream(),"utf-8"));
 
-		ANTLRInputStream in = new ANTLRInputStream(read);
-		FetalLexer lexer = new FetalLexer(in);
-		CommonTokenStream tokens = new CommonTokenStream(lexer);
-		FetalParser parser = new FetalParser(tokens);
-		fParser = parser;
-
-		parser.removeErrorListeners(); // remove ConsoleErrorListener
-		parser.addErrorListener(new FetalErrorListener()); // add ours
-		try {
-			blockCtx = parser.block(this);
-		} catch (RuntimeException e) {
-			if (errMsg.length() == 0) {
-				errMsg = e.toString();
-				logger.error(errMsg);
-			}
-			throw new RuntimeException(errMsg);
-		}
-
-	}
-*/
 	public void loadCoupon(String rule) throws IOException {
 		URL url;
 		
@@ -674,13 +660,43 @@ public abstract class FetalTransaction {
 		url = "File://" + url;
 		loadCoupon(url);
 	}
-	/*
-	public void loadBlock(File file) throws RecognitionException, IOException, RuntimeException {
-		String url = file.toURI().toURL().getPath();
-		url = "File://" + url;
-		loadBlock(url);
+	public void _credit(Double amount, String account) {
+		account = getMap(account);
+		credit(amount, account);
 	}
-	*/
+	
+	public void _debit(Double amount, String account) {
+		account = getMap(account);
+		debit(amount, account);
+	}
+	
+	public void _ledger(char type, Double amount, String account, String description) {
+		account = getMap(account);
+		ledger(type, amount, account, description);
+	}
+	
+	public double _getBalance(String account) {
+		account = getMap(account);
+		
+		return getBalance(account);
+	}
+	
+	public Object _lookup(String sql, Object...args) {
+		sql = translateFormat(sql);
+		
+		return lookup(sql, args);
+	}
+	
+	public void _update(String sql, Object...args) {
+		sql = translateFormat(sql);
+		update(sql, args);
+	}
+	
+	public List<Object>  _list(String sql, Object...args) {
+		sql = translateFormat(sql);
+		return list(sql, args);
+	}
+	
 	/********************************************************************
 	 * The following are abstract functions.
 	 ********************************************************************/
@@ -707,5 +723,8 @@ public abstract class FetalTransaction {
 	public abstract Object lookup(String sql, Object...args);
 	public abstract void update(String sql, Object...args);
 	public abstract List<Object> list(String sql, Object...args);
+	public abstract void commitStock(Set<?> items);
+	public abstract void depleteStock(Set<?> items);
+	public abstract void addStock(String sku, Long qty);
 
 }

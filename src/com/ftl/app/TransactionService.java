@@ -2,6 +2,7 @@ package com.ftl.app;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -116,5 +117,20 @@ public class TransactionService extends FetalTransaction {
 		format = translateFormat(format);
 		System.out.printf(format, args);
 
+	}
+
+	@Override
+	public void commitStock(Set<?> items) {
+		System.out.printf("Commiting %d items %n", items.size());
+	}
+
+	@Override
+	public void depleteStock(Set<?> items) {
+		System.out.printf("Depleting %d items %n", items.size());
+	}
+
+	@Override
+	public void addStock(String sku, Long qty) {
+		System.out.printf("addStock( %s, %d ) %n", sku, qty);
 	}
 }
