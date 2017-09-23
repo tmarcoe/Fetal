@@ -7,7 +7,6 @@ grammar Fetal;
 package com.ftl.derived;
 import com.ftl.helper.*;
 import com.ftl.events.*;
-import com.ftl.exceptions.*;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
@@ -15,6 +14,7 @@ import java.text.ParsePosition;
 import java.util.Date;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Semaphore;
+import java.util.Set;
 } 
 @members {
 	FetalTransaction trans;
@@ -22,7 +22,7 @@ import java.util.concurrent.Semaphore;
 	Semaphore semaphore;
 	private static final int NOT_DEFINED=0, MALFORMED_EXP=1, CAST_EXCEPT=2, CANNOT_LOAD_FILE=3,
 							 INVALID_DATE=4, CANNOT_LOAD_OBJECT=5, CANNOT_INVOKE_METHD=6, INVALID_OBJECT=7,
-							 INVALID_ARG=8, RECORD_NOT_FOUND=9, DEBUG_ERROR=10; 
+							 INVALID_ARG=8, RECORD_NOT_FOUND=9, DEBUG_ERROR=10, MALFORMED_CODEBLOCK=11; 
 }
 transaction[FetalTransaction t]  : 
 			{
@@ -47,7 +47,7 @@ begin
 		trans.setPrevLine(trans.getLineNum());
 	}
 }	
-		: 'begin' {trans.beginTrans();};
+		: Begin {trans.beginTrans();};
 
 end		
 @init{
@@ -64,7 +64,7 @@ end
 		trans.setPrevLine(trans.getLineNum());
 	}
 }	
-		: 'end' {trans.commitTrans();};
+		: End {trans.commitTrans();};
 
 
 statements	: (statement)+
@@ -272,8 +272,12 @@ block[boolean result]
 		// Consume tokens until the end of block marker
 		while (getCurrentToken().getText().compareTo("}") != 0){
 			consume();
+			if (getCurrentToken().getText().compareTo("<EOF>") == 0 ) break;
 		}
-		
+		if (getCurrentToken().getText().compareTo("<EOF>") == 0 ) {
+			RecognitionException ex = trans.errorHandler(MALFORMED_CODEBLOCK, _localctx, this);
+			_errHandler.reportError(this, ex );
+		}	
 		// Set the parser state as if it had executed the tokens
 		_localctx.start = getCurrentToken();
 		_ctx.start = getCurrentToken();
@@ -320,7 +324,7 @@ eval returns [boolean result]
 assignmentCommands returns [Object obj] 
 			:  GetBalance '(' stringArg ')'
 			{
-				$obj = trans.getBalance($stringArg.string);
+				$obj = trans._getBalance($stringArg.string);
 			}
 			|	GetVariableType '(' var ')'
 			{
@@ -375,18 +379,18 @@ assignmentCommands returns [Object obj]
 				}
 				
 			}
-			| Lookup '(' sql=stringArg ',' argumentList ')' /* Lookup( table, SQL) */
+			| Lookup '(' sql=stringArg (',' argumentList)? ')' /* Lookup( table, SQL) */
 			{
-				$obj=trans.lookup($sql.string, $argumentList.argList.toArray());
+				$obj=trans._lookup($sql.string, $argumentList.argList.toArray());
 				if ($obj == null) {
 					
 					RecognitionException ex = trans.errorHandler(RECORD_NOT_FOUND, _localctx, this);
 					_errHandler.reportError(this, ex );
 				}
 			}
-			| List '(' sql=stringArg ',' argumentList ')' /* List( table, SQL) */
+			| List '(' sql=stringArg (',' argumentList)? ')' /* List( table, SQL) */
 			{
-				trans.list( $sql.string, $argumentList.argList.toArray());
+				trans._list( $sql.string, $argumentList.argList.toArray());
 			}
 			| invocation 
 			{
@@ -414,15 +418,15 @@ command 	: Print '(' rharg ')'
 			}
 			| Credit '(' amtArg ',' stringArg ')'
 			{
-				trans.credit($amtArg.amt, $stringArg.string);
+				trans._credit($amtArg.amt, $stringArg.string);
 			}
 			| Debit '(' amtArg ',' stringArg ')'
 			{
-				trans.debit($amtArg.amt, $stringArg.string);
+				trans._debit($amtArg.amt, $stringArg.string);
 			}
 			| Ledger '(' debitOrCredit ',' amtArg ',' acc=stringArg ',' desc=stringArg ')'
 			{
-				trans.ledger($debitOrCredit.c, $amtArg.amt, $acc.string, $desc.string );
+				trans._ledger($debitOrCredit.c, $amtArg.amt, $acc.string, $desc.string );
 			}
 			| Alias '(' account=stringArg ',' name=stringArg ')'
 			{
@@ -442,7 +446,19 @@ command 	: Print '(' rharg ')'
 			}
 			| Update '(' sql=stringArg ',' argumentList ')'
 			{
-				trans.update( $sql.string, $argumentList.argList.toArray());
+				trans._update( $sql.string, $argumentList.argList.toArray());
+			}
+			| CommitStock '(' setArg ')'
+			{
+				trans.commitStock($setArg.items);
+			}
+			| DepleteStock '(' setArg ')'
+			{
+				trans.depleteStock($setArg.items);
+			}
+			| AddStock '(' stringArg ',' numberArg ')'
+			{
+				trans.addStock($stringArg.string, $numberArg.num);
 			}
 			;
 
@@ -499,6 +515,12 @@ stringArg returns [String string]
 				$string = (String) $rharg.obj;
 			}
 			;
+setArg returns[Set<?> items]
+			: invocation
+			{
+				$items = trans.getList($invocation.obj, $invocation.method);
+			}
+			;
 
 numberArg	returns [Long num]
 			: rharg
@@ -512,6 +534,7 @@ numberArg	returns [Long num]
 			}
 			;
 
+
 dateArg	returns [Date date]
 			: rharg
 			{
@@ -524,6 +547,8 @@ dateArg	returns [Date date]
 				
 			}
 			;
+			
+			
 
 debitOrCredit returns [char c]	: charLiteral
 				{
@@ -573,19 +598,6 @@ literal	returns [Object obj]
 					}
 			}
 			;
-
-
-fileName returns[String name]	
-			: '<' fn=Identifier ('.' ft=Identifier)? '>'
-			{
-				if ($ft.text != null) {
-					$name = $fn.text + "." + $ft.text;
-				}else{
-					$name = $fn.text;
-				}
-			}
-			;
-			
 
 
 charLiteral		: ('D' | 'C');
@@ -681,12 +693,17 @@ List			: 'list' 	;
 
 
 // Reserve words (Commands)
+Begin			: 'begin' ;
+End				: 'end'   ;
 Credit			: 'credit';
 Debit			: 'debit';
 Ledger			: 'ledger';
 Alias			: 'alias' ;
 MapFile			: 'mapFile' ;
 Update			: 'update'	;
+DepleteStock	: 'depleteStock' ;
+CommitStock		: 'commitStock' ;
+AddStock		: 'addStock' ;
 Print			: 'print';
 
 IfStatement	: 'if';
@@ -694,14 +711,10 @@ Else		: 'else';
 OpenBracket : '{';
 CloseBracket : '}';
 
-Percentage	: (Sign)? Digit+ (Dot Digit+)? '%' ;
-
-Boolean		: 'true' | 'false';
-
-Number			: Sign? Digit+;
-
-Decimal		: Sign? Digit+ Dot Digit*;
-
+Boolean		: 'true' | 'false';    
+Percentage	: Decimal '%' ;
+Decimal		: Number Dot Digit*;
+Number		: Sign? Digit+;
 Date		: Year '-' Month '-' Day;
 
 Identifier
@@ -735,12 +748,9 @@ fragment
 Digit
     :  [0-9]
     ;
-    
 fragment
-Digits
-	: [-+]?[0-9]+
-	;
-
+Sign :   Plus | Minus;
+   
 fragment
 Year
 	: Digit Digit Digit Digit;
@@ -753,10 +763,7 @@ fragment
 Day
 	: Digit Digit;
 
-fragment
-Sign
-    :   Plus | Minus
-    ;
+
 fragment Dot : '.';
 
     
