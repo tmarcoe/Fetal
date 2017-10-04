@@ -23,6 +23,15 @@ import java.util.Set;
 	private static final int NOT_DEFINED=0, MALFORMED_EXP=1, CAST_EXCEPT=2, CANNOT_LOAD_FILE=3,
 							 INVALID_DATE=4, CANNOT_LOAD_OBJECT=5, CANNOT_INVOKE_METHD=6, INVALID_OBJECT=7,
 							 INVALID_ARG=8, RECORD_NOT_FOUND=9, DEBUG_ERROR=10, MALFORMED_CODEBLOCK=11; 
+	public long getErrorCount() {
+		return trans.getErrorCount();
+	}
+	public void setErrorCount(long errorCount ) {
+		trans.setErrorCount(errorCount);
+	}
+	public String getErrMsg() {
+		return trans.getErrMsg();
+	}
 }
 transaction[FetalTransaction t]  : 
 			{
@@ -151,6 +160,7 @@ assignment returns [Object obj, String lh]
 				if (trans.isVariable($lharg.text) == true) {
 					trans.assignVariable($lharg.text, $rharg.obj);
 				}
+					
 			}
 			| lharg unaryOP rharg
 			{
@@ -158,7 +168,7 @@ assignment returns [Object obj, String lh]
 				oper = oper.substring(0, oper.length() - 1);
 				if (trans.isVariable($lharg.text) == false) {
 					RecognitionException ex = trans.errorHandler(NOT_DEFINED, _localctx, this);
-					_errHandler.reportError(this, ex );
+					// _errHandler.reportError(this, ex );
 				}else{
 					$obj = om.getExpression($lharg.obj, oper, $rharg.obj);								
 					trans.assignVariable($lharg.text, $obj);
@@ -214,7 +224,7 @@ rharg returns[Object obj]
 			{
 				if (trans.isMatched($lh.obj, $rh.obj) == false) {
 					RecognitionException ex = trans.errorHandler(CAST_EXCEPT, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 				}else{
 					$obj = om.getExpression($lh.obj, $expressionOp.text, $rh.obj);
 				}
@@ -223,7 +233,7 @@ rharg returns[Object obj]
 			{
 				if (trans.isMatched($lh.obj, $rh.obj) == false) {
 					RecognitionException ex = trans.errorHandler(CAST_EXCEPT, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 				}else{
 					$obj = om.getExpression($lh.obj, $expressionOp.text, $rh.obj);
 				}
@@ -233,7 +243,7 @@ rharg returns[Object obj]
 				
 				if (trans.isVariable($var.name) == false) {
 					RecognitionException ex = trans.errorHandler(NOT_DEFINED, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 					
 				}
 				$obj = trans.getValue($var.name);
@@ -244,7 +254,7 @@ rharg returns[Object obj]
 				$obj = $literal.obj;
 				if ($obj == null) {
 					RecognitionException ex = trans.errorHandler(MALFORMED_EXP, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 				}
 			}
 			| assignmentCommands
@@ -276,7 +286,7 @@ block[boolean result]
 		}
 		if (getCurrentToken().getText().compareTo("<EOF>") == 0 ) {
 			RecognitionException ex = trans.errorHandler(MALFORMED_CODEBLOCK, _localctx, this);
-			_errHandler.reportError(this, ex );
+			//_errHandler.reportError(this, ex );
 		}	
 		// Set the parser state as if it had executed the tokens
 		_localctx.start = getCurrentToken();
@@ -331,7 +341,7 @@ assignmentCommands returns [Object obj]
 				
 				if (trans.isVariable($var.name) == false) {
 					Exception ex = trans.errorHandler(NOT_DEFINED, _localctx, this);
-					_errHandler.reportError(this, (RecognitionException) ex );
+					//_errHandler.reportError(this, (RecognitionException) ex );
 					
 				}else{
 					$obj = trans.getVariableType($var.name);
@@ -348,7 +358,7 @@ assignmentCommands returns [Object obj]
 					$obj = (Date) sdf.parse(sdf.format(new Date()));
 				}catch (ParseException pe){
 					RecognitionException ex = trans.errorHandler(INVALID_DATE, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 				}
 			}
 			| GetDays '(' startPeriod=dateArg ',' endPeriod=dateArg ')'
@@ -385,7 +395,7 @@ assignmentCommands returns [Object obj]
 				if ($obj == null) {
 					
 					RecognitionException ex = trans.errorHandler(RECORD_NOT_FOUND, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 				}
 			}
 			| List '(' sql=stringArg (',' argumentList)? ')' /* List( table, SQL) */
@@ -411,7 +421,7 @@ command 	: Print '(' rharg ')'
 			{
 				if ($rharg.obj == null) {
 					Exception ex = trans.errorHandler(MALFORMED_EXP, _localctx, this);
-					_errHandler.reportError(this, (RecognitionException) ex );
+					//_errHandler.reportError(this, (RecognitionException) ex );
 				}else{
 					System.out.println($rharg.obj);
 				}
@@ -468,7 +478,7 @@ invocation returns [Object obj, String method, Object[] args]
 				$obj = trans.getValue($o.text);
 				if ($obj == null) {
 					RecognitionException ex = trans.errorHandler(INVALID_OBJECT, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 				}
 				$method = $m.text;				
 				$args = $argumentList.argList.toArray();
@@ -478,7 +488,7 @@ invocation returns [Object obj, String method, Object[] args]
 				$obj = trans.getValue($o.text);
 				if ($obj == null) {
 					RecognitionException ex = trans.errorHandler(INVALID_OBJECT, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 				}
 				$method = $m.text;				
 				$args = null;
@@ -497,7 +507,7 @@ amtArg	returns [Double amt]
 			{
 				if ($rharg.obj == null || $rharg.obj instanceof Double == false) {
 					RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 					
 				}
 				$amt = (Double) $rharg.obj;
@@ -509,7 +519,7 @@ stringArg returns [String string]
 			{
 				if ($rharg.obj == null || $rharg.obj instanceof String == false) {
 					RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 					
 				}
 				$string = (String) $rharg.obj;
@@ -527,7 +537,7 @@ numberArg	returns [Long num]
 			{
 				if ($rharg.obj == null || $rharg.obj instanceof Long == false) {
 					RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 					
 				}
 				$num = (Long) $rharg.obj;
@@ -540,7 +550,7 @@ dateArg	returns [Date date]
 			{
 				if ($rharg.obj == null || $rharg.obj instanceof Date == false) {
 					RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
-					_errHandler.reportError(this, ex );
+					//_errHandler.reportError(this, ex );
 					
 				}
 				$date = (Date) $rharg.obj;
@@ -594,7 +604,7 @@ literal	returns [Object obj]
 						$obj = (Date) sdf.parse($dateLiteral.text);
 					}catch(ParseException pe){
 						Exception ex = trans.errorHandler(2, _localctx, this);
-						_errHandler.reportError(this, (RecognitionException) ex );
+						//_errHandler.reportError(this, (RecognitionException) ex );
 					}
 			}
 			;
