@@ -1,7 +1,6 @@
 package com.ftl.app;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 
 import javax.swing.JFrame;
@@ -94,7 +93,7 @@ public class TransactionService extends FetalTransaction {
 
 
 	@Override
-	public List<Object> list( String sql, Object... args) {
+	public Set<Object> list( String sql, Object... args) {
 		String format = "list( " + sql + " )\n";
 		format = translateFormat(format);
 		System.out.printf(format, args);

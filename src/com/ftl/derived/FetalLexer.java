@@ -134,6 +134,15 @@ public class FetalLexer extends Lexer {
 		private static final int NOT_DEFINED=0, MALFORMED_EXP=1, CAST_EXCEPT=2, CANNOT_LOAD_FILE=3,
 								 INVALID_DATE=4, CANNOT_LOAD_OBJECT=5, CANNOT_INVOKE_METHD=6, INVALID_OBJECT=7,
 								 INVALID_ARG=8, RECORD_NOT_FOUND=9, DEBUG_ERROR=10, MALFORMED_CODEBLOCK=11; 
+		public long getErrorCount() {
+			return trans.getErrorCount();
+		}
+		public void setErrorCount(long errorCount ) {
+			trans.setErrorCount(errorCount);
+		}
+		public String getErrMsg() {
+			return trans.getErrMsg();
+		}
 
 
 	public FetalLexer(CharStream input) {

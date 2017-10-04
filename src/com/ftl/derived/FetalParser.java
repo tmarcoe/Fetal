@@ -147,6 +147,15 @@ public class FetalParser extends Parser {
 		private static final int NOT_DEFINED=0, MALFORMED_EXP=1, CAST_EXCEPT=2, CANNOT_LOAD_FILE=3,
 								 INVALID_DATE=4, CANNOT_LOAD_OBJECT=5, CANNOT_INVOKE_METHD=6, INVALID_OBJECT=7,
 								 INVALID_ARG=8, RECORD_NOT_FOUND=9, DEBUG_ERROR=10, MALFORMED_CODEBLOCK=11; 
+		public long getErrorCount() {
+			return trans.getErrorCount();
+		}
+		public void setErrorCount(long errorCount ) {
+			trans.setErrorCount(errorCount);
+		}
+		public String getErrMsg() {
+			return trans.getErrMsg();
+		}
 
 	public FetalParser(TokenStream input) {
 		super(input);
@@ -679,6 +688,7 @@ public class FetalParser extends Parser {
 								if (trans.isVariable((((AssignmentContext)_localctx).lharg!=null?_input.getText(((AssignmentContext)_localctx).lharg.start,((AssignmentContext)_localctx).lharg.stop):null)) == true) {
 									trans.assignVariable((((AssignmentContext)_localctx).lharg!=null?_input.getText(((AssignmentContext)_localctx).lharg.start,((AssignmentContext)_localctx).lharg.stop):null), ((AssignmentContext)_localctx).rharg.obj);
 								}
+									
 							
 				}
 				break;
@@ -696,7 +706,7 @@ public class FetalParser extends Parser {
 								oper = oper.substring(0, oper.length() - 1);
 								if (trans.isVariable((((AssignmentContext)_localctx).lharg!=null?_input.getText(((AssignmentContext)_localctx).lharg.start,((AssignmentContext)_localctx).lharg.stop):null)) == false) {
 									RecognitionException ex = trans.errorHandler(NOT_DEFINED, _localctx, this);
-									_errHandler.reportError(this, ex );
+									// _errHandler.reportError(this, ex );
 								}else{
 									((AssignmentContext)_localctx).obj =  om.getExpression(((AssignmentContext)_localctx).lharg.obj, oper, ((AssignmentContext)_localctx).rharg.obj);								
 									trans.assignVariable((((AssignmentContext)_localctx).lharg!=null?_input.getText(((AssignmentContext)_localctx).lharg.start,((AssignmentContext)_localctx).lharg.stop):null), _localctx.obj);
@@ -1060,7 +1070,7 @@ public class FetalParser extends Parser {
 
 								if (trans.isMatched(((RhargContext)_localctx).lh.obj, ((RhargContext)_localctx).rh.obj) == false) {
 									RecognitionException ex = trans.errorHandler(CAST_EXCEPT, _localctx, this);
-									_errHandler.reportError(this, ex );
+									//_errHandler.reportError(this, ex );
 								}else{
 									((RhargContext)_localctx).obj =  om.getExpression(((RhargContext)_localctx).lh.obj, (((RhargContext)_localctx).expressionOp!=null?_input.getText(((RhargContext)_localctx).expressionOp.start,((RhargContext)_localctx).expressionOp.stop):null), ((RhargContext)_localctx).rh.obj);
 								}
@@ -1075,7 +1085,7 @@ public class FetalParser extends Parser {
 								
 								if (trans.isVariable(((RhargContext)_localctx).var.name) == false) {
 									RecognitionException ex = trans.errorHandler(NOT_DEFINED, _localctx, this);
-									_errHandler.reportError(this, ex );
+									//_errHandler.reportError(this, ex );
 									
 								}
 								((RhargContext)_localctx).obj =  trans.getValue(((RhargContext)_localctx).var.name);
@@ -1091,7 +1101,7 @@ public class FetalParser extends Parser {
 								((RhargContext)_localctx).obj =  ((RhargContext)_localctx).literal.obj;
 								if (_localctx.obj == null) {
 									RecognitionException ex = trans.errorHandler(MALFORMED_EXP, _localctx, this);
-									_errHandler.reportError(this, ex );
+									//_errHandler.reportError(this, ex );
 								}
 							
 				}
@@ -1129,7 +1139,7 @@ public class FetalParser extends Parser {
 
 					          				if (trans.isMatched(((RhargContext)_localctx).lh.obj, ((RhargContext)_localctx).rh.obj) == false) {
 					          					RecognitionException ex = trans.errorHandler(CAST_EXCEPT, _localctx, this);
-					          					_errHandler.reportError(this, ex );
+					          					//_errHandler.reportError(this, ex );
 					          				}else{
 					          					((RhargContext)_localctx).obj =  om.getExpression(((RhargContext)_localctx).lh.obj, (((RhargContext)_localctx).expressionOp!=null?_input.getText(((RhargContext)_localctx).expressionOp.start,((RhargContext)_localctx).expressionOp.stop):null), ((RhargContext)_localctx).rh.obj);
 					          				}
@@ -1309,7 +1319,7 @@ public class FetalParser extends Parser {
 					}
 					if (getCurrentToken().getText().compareTo("<EOF>") == 0 ) {
 						RecognitionException ex = trans.errorHandler(MALFORMED_CODEBLOCK, _localctx, this);
-						_errHandler.reportError(this, ex );
+						//_errHandler.reportError(this, ex );
 					}	
 					// Set the parser state as if it had executed the tokens
 					_localctx.start = getCurrentToken();
@@ -1598,7 +1608,7 @@ public class FetalParser extends Parser {
 								
 								if (trans.isVariable(((AssignmentCommandsContext)_localctx).var.name) == false) {
 									Exception ex = trans.errorHandler(NOT_DEFINED, _localctx, this);
-									_errHandler.reportError(this, (RecognitionException) ex );
+									//_errHandler.reportError(this, (RecognitionException) ex );
 									
 								}else{
 									((AssignmentCommandsContext)_localctx).obj =  trans.getVariableType(((AssignmentCommandsContext)_localctx).var.name);
@@ -1627,7 +1637,7 @@ public class FetalParser extends Parser {
 									((AssignmentCommandsContext)_localctx).obj =  (Date) sdf.parse(sdf.format(new Date()));
 								}catch (ParseException pe){
 									RecognitionException ex = trans.errorHandler(INVALID_DATE, _localctx, this);
-									_errHandler.reportError(this, ex );
+									//_errHandler.reportError(this, ex );
 								}
 							
 				}
@@ -1763,7 +1773,7 @@ public class FetalParser extends Parser {
 								if (_localctx.obj == null) {
 									
 									RecognitionException ex = trans.errorHandler(RECORD_NOT_FOUND, _localctx, this);
-									_errHandler.reportError(this, ex );
+									//_errHandler.reportError(this, ex );
 								}
 							
 				}
@@ -1904,7 +1914,7 @@ public class FetalParser extends Parser {
 
 								if (((CommandContext)_localctx).rharg.obj == null) {
 									Exception ex = trans.errorHandler(MALFORMED_EXP, _localctx, this);
-									_errHandler.reportError(this, (RecognitionException) ex );
+									//_errHandler.reportError(this, (RecognitionException) ex );
 								}else{
 									System.out.println(((CommandContext)_localctx).rharg.obj);
 								}
@@ -2170,7 +2180,7 @@ public class FetalParser extends Parser {
 								((InvocationContext)_localctx).obj =  trans.getValue((((InvocationContext)_localctx).o!=null?_input.getText(((InvocationContext)_localctx).o.start,((InvocationContext)_localctx).o.stop):null));
 								if (_localctx.obj == null) {
 									RecognitionException ex = trans.errorHandler(INVALID_OBJECT, _localctx, this);
-									_errHandler.reportError(this, ex );
+									//_errHandler.reportError(this, ex );
 								}
 								((InvocationContext)_localctx).method =  (((InvocationContext)_localctx).m!=null?_input.getText(((InvocationContext)_localctx).m.start,((InvocationContext)_localctx).m.stop):null);				
 								((InvocationContext)_localctx).args =  ((InvocationContext)_localctx).argumentList.argList.toArray();
@@ -2192,7 +2202,7 @@ public class FetalParser extends Parser {
 								((InvocationContext)_localctx).obj =  trans.getValue((((InvocationContext)_localctx).o!=null?_input.getText(((InvocationContext)_localctx).o.start,((InvocationContext)_localctx).o.stop):null));
 								if (_localctx.obj == null) {
 									RecognitionException ex = trans.errorHandler(INVALID_OBJECT, _localctx, this);
-									_errHandler.reportError(this, ex );
+									//_errHandler.reportError(this, ex );
 								}
 								((InvocationContext)_localctx).method =  (((InvocationContext)_localctx).m!=null?_input.getText(((InvocationContext)_localctx).m.start,((InvocationContext)_localctx).m.stop):null);				
 								((InvocationContext)_localctx).args =  null;
@@ -2292,7 +2302,7 @@ public class FetalParser extends Parser {
 
 							if (((AmtArgContext)_localctx).rharg.obj == null || ((AmtArgContext)_localctx).rharg.obj instanceof Double == false) {
 								RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
-								_errHandler.reportError(this, ex );
+								//_errHandler.reportError(this, ex );
 								
 							}
 							((AmtArgContext)_localctx).amt =  (Double) ((AmtArgContext)_localctx).rharg.obj;
@@ -2333,7 +2343,7 @@ public class FetalParser extends Parser {
 
 							if (((StringArgContext)_localctx).rharg.obj == null || ((StringArgContext)_localctx).rharg.obj instanceof String == false) {
 								RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
-								_errHandler.reportError(this, ex );
+								//_errHandler.reportError(this, ex );
 								
 							}
 							((StringArgContext)_localctx).string =  (String) ((StringArgContext)_localctx).rharg.obj;
@@ -2410,7 +2420,7 @@ public class FetalParser extends Parser {
 
 							if (((NumberArgContext)_localctx).rharg.obj == null || ((NumberArgContext)_localctx).rharg.obj instanceof Long == false) {
 								RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
-								_errHandler.reportError(this, ex );
+								//_errHandler.reportError(this, ex );
 								
 							}
 							((NumberArgContext)_localctx).num =  (Long) ((NumberArgContext)_localctx).rharg.obj;
@@ -2451,7 +2461,7 @@ public class FetalParser extends Parser {
 
 							if (((DateArgContext)_localctx).rharg.obj == null || ((DateArgContext)_localctx).rharg.obj instanceof Date == false) {
 								RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
-								_errHandler.reportError(this, ex );
+								//_errHandler.reportError(this, ex );
 								
 							}
 							((DateArgContext)_localctx).date =  (Date) ((DateArgContext)_localctx).rharg.obj;
@@ -2615,7 +2625,7 @@ public class FetalParser extends Parser {
 										((LiteralContext)_localctx).obj =  (Date) sdf.parse((((LiteralContext)_localctx).dateLiteral!=null?_input.getText(((LiteralContext)_localctx).dateLiteral.start,((LiteralContext)_localctx).dateLiteral.stop):null));
 									}catch(ParseException pe){
 										Exception ex = trans.errorHandler(2, _localctx, this);
-										_errHandler.reportError(this, (RecognitionException) ex );
+										//_errHandler.reportError(this, (RecognitionException) ex );
 									}
 							
 				}

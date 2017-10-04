@@ -8,11 +8,11 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
-import org.apache.log4j.Logger;
+import com.ftl.derived.FetalParser;
 
 
 public class FetalErrorListener extends BaseErrorListener {
-	private static Logger logger = Logger.getLogger(FetalErrorListener.class);	
+
 	@Override
 	public void syntaxError(Recognizer <?,?> recognizer, 
 							Object offendingSymbol, 
@@ -20,17 +20,26 @@ public class FetalErrorListener extends BaseErrorListener {
 							String msg, RecognitionException e){
 		String exception = "Unknown Exception";
 		
+		FetalParser parser = (FetalParser) recognizer;
+		parser.setErrorCount(parser.getErrorCount() + 1);
+		String errMsg = parser.getErrMsg();
+		
 		if (e != null) {
 			exception = e.toString();
+		}else if (msg.length() > 0) {
+			exception = msg;
+		} else if (errMsg.length() > 0) {
+			exception = errMsg;
 		}
+
 		msg = exception + ": Error @" + line + "," + charPositionInLine;
-		logger.error(msg);	
+		System.err.println(msg);
 	}
 	@Override
 	public void reportAmbiguity(Parser recognizer, DFA dfa, int startIndex,
 			int stopIndex, boolean exact, BitSet ambigAlts, ATNConfigSet configs) {
-		super.reportAmbiguity(recognizer, dfa, startIndex, stopIndex, exact, ambigAlts,
-				configs);
+		super.reportAmbiguity(recognizer, dfa, startIndex, stopIndex, exact, ambigAlts,	configs);
+
 	}
 	@Override
 	public void reportAttemptingFullContext(Parser recognizer, DFA dfa,

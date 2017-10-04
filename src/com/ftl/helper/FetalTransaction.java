@@ -25,7 +25,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
@@ -128,11 +127,11 @@ public abstract class FetalTransaction {
 	}
 	public String getErrMsg() {
 		String msg = errMsg;
-		errMsg = "";
 
 		return msg;
 	}
-	public RecognitionException errorHandler(int errorNum, ParserRuleContext context, Parser parser) {
+	
+	public RecognitionException errorHandler(int errorNum, ParserRuleContext context, FetalParser parser) {
 		Token token = parser.getCurrentToken();
 		String errStr = String.format(" @line %d, pos %d", token.getLine(), token.getCharPositionInLine());
 		String msg = errorCode[errorNum];
@@ -183,6 +182,8 @@ public abstract class FetalTransaction {
 	public void closeFetal() {
 		clearVariables();
 		clearMap();
+		errMsg = "";
+		errorCount = 0;
 	}
 	
 	public void clearVariables() {
@@ -602,9 +603,9 @@ public abstract class FetalTransaction {
 		FetalParser parser = new FetalParser(tokens);
 		fParser = parser;
 
+		parser.removeErrorListeners(); // remove ConsoleErrorListener
+		parser.addErrorListener(new FetalErrorListener()); // add ours
 		if (isDebugMode() == false) {
-			parser.removeErrorListeners(); // remove ConsoleErrorListener
-			parser.addErrorListener(new FetalErrorListener()); // add ours
 			parser.setErrorHandler(new BailErrorStrategy());
 		}
 		try {
@@ -692,7 +693,7 @@ public abstract class FetalTransaction {
 		update(sql, args);
 	}
 	
-	public List<Object>  _list(String sql, Object...args) {
+	public Set<Object>  _list(String sql, Object...args) {
 		sql = translateFormat(sql);
 		return list(sql, args);
 	}
@@ -722,7 +723,7 @@ public abstract class FetalTransaction {
 
 	public abstract Object lookup(String sql, Object...args);
 	public abstract void update(String sql, Object...args);
-	public abstract List<Object> list(String sql, Object...args);
+	public abstract Set<Object> list(String sql, Object...args);
 	public abstract void commitStock(Set<?> items);
 	public abstract void depleteStock(Set<?> items);
 	public abstract void addStock(String sku, Long qty);
