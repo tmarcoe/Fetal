@@ -32,6 +32,9 @@ import java.util.Set;
 	public String getErrMsg() {
 		return trans.getErrMsg();
 	}
+	public void fetalLogger(String msg) {
+		trans.fetalLogger(getClass().getName(), msg);
+	}
 }
 transaction[FetalTransaction t]  : 
 			{
