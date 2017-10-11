@@ -32,8 +32,8 @@ public class FetalErrorListener extends BaseErrorListener {
 			exception = errMsg;
 		}
 
-		msg = exception + ": Error @" + line + "," + charPositionInLine;
-		System.err.println(msg);
+		msg = exception + ": " + line + "," + charPositionInLine;
+		parser.fetalLogger(msg);
 	}
 	@Override
 	public void reportAmbiguity(Parser recognizer, DFA dfa, int startIndex,

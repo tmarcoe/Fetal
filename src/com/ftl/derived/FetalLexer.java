@@ -143,6 +143,9 @@ public class FetalLexer extends Lexer {
 		public String getErrMsg() {
 			return trans.getErrMsg();
 		}
+		public void fetalLogger(String msg) {
+			trans.fetalLogger(getClass().getName(), msg);
+		}
 
 
 	public FetalLexer(CharStream input) {

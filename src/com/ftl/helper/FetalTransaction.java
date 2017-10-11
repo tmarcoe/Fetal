@@ -605,9 +605,6 @@ public abstract class FetalTransaction {
 
 		parser.removeErrorListeners(); // remove ConsoleErrorListener
 		parser.addErrorListener(new FetalErrorListener()); // add ours
-		if (isDebugMode() == false) {
-			parser.setErrorHandler(new BailErrorStrategy());
-		}
 		try {
 			transCtx = parser.transaction(this);
 			
@@ -727,5 +724,7 @@ public abstract class FetalTransaction {
 	public abstract void commitStock(Set<?> items);
 	public abstract void depleteStock(Set<?> items);
 	public abstract void addStock(String sku, Long qty);
+	public abstract void fetalLogger(String clss, String msg);
+	
 
 }
