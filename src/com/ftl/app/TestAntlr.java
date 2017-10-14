@@ -21,7 +21,7 @@ public class TestAntlr {
 		
 		TransactionService trans = new TransactionService();
 		trans.setDebugMode(false);
-		trans.initTransaction("file:///home/donzalma/public_html/config/fetal.properties"); 
+		trans.initTransaction("file:///home/workspace/config/fetal.properties"); 
 
         try {
     		trans.setDescription("Purchase of inventory (SKU #9999999)");
@@ -33,7 +33,7 @@ public class TestAntlr {
         	register.setTax(5);
         	register.setAddedCharges(0);
         	register.setShipCharges(0);
-        	trans.loadRule("myrule.trans");
+        	trans.loadRule("new.trans");
         	FetalParser parser = trans.getfParser();
         	TransactionContext tCtx = trans.getTransCtx();
         	if (trans.isDebugMode() == true)

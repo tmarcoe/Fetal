@@ -1315,12 +1315,15 @@ public class FetalParser extends Parser {
 
 
 				if (_localctx.result == false) { // If the statement evealuates to false
+					int level = 0;
 					// Consume tokens until the end of block marker
-					while (getCurrentToken().getText().compareTo("}") != 0){
+					while (true){
+						if (getCurrentToken().getText().compareTo("{") == 0) level++;
 						consume();
-						if (getCurrentToken().getText().compareTo("<EOF>") == 0 ) break;
+						if (getCurrentToken().getText().compareTo("}") == 0) level--;
+						if (level == 0 || getCurrentToken().getText().compareTo("<EOF>") == 0 ) break;
 					}
-					if (getCurrentToken().getText().compareTo("<EOF>") == 0 ) {
+					if (level > 0) {
 						RecognitionException ex = trans.errorHandler(MALFORMED_CODEBLOCK, _localctx, this);
 						//_errHandler.reportError(this, ex );
 					}	
