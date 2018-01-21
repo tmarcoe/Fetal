@@ -387,6 +387,10 @@ assignmentCommands returns [Object obj]
 			{
 				$obj=trans.getYear($dateArg.date);
 			}
+			|	GetDate '(' y=numberArg ',' m=numberArg ',' d=numberArg ')'
+			{
+				$obj=trans.getDate( $y.num, $m.num, $d.num );
+			}
 			| Import '(' stringArg ')' /* Import( path ) */
 			{
 				$obj=trans.importClass($stringArg.string);
@@ -463,6 +467,14 @@ command 	: Print '(' rharg ')'
 			| Update '(' sql=stringArg ',' argumentList ')'
 			{
 				trans._update( $sql.string, $argumentList.argList.toArray());
+			}
+			| Insert '(' sql=stringArg ',' dao=daoArg ')'
+			{
+				trans.insert($sql.string, $dao.dao);
+			}
+			| Delete '(' sql=stringArg ',' dao=daoArg ')'
+			{
+				trans.delete($sql.string, $dao.dao);
 			}
 			| CommitStock '(' setArg ')'
 			{
@@ -564,7 +576,15 @@ dateArg	returns [Date date]
 			}
 			;
 			
-			
+daoArg returns [Object dao]
+			: rharg 
+			{
+				if ($rharg.obj == null) {
+					RecognitionException ex = trans.errorHandler(INVALID_ARG, _localctx, this);
+				}
+				$dao = $rharg.obj;
+			}
+			;			
 
 debitOrCredit returns [char c]	: charLiteral
 				{
@@ -703,6 +723,7 @@ DayOfTheWeek	: 'dayOfTheWeek' ;
 GetCalendarDay  : 'getCalendarDay' ;
 GetMonth		: 'getMonth' ;
 GetYear			: 'getYear' ;
+GetDate			: 'getDate' ;
 Import			: 'import'	;
 Lookup			: 'lookup'	;
 List			: 'list' 	;
@@ -717,6 +738,8 @@ Ledger			: 'ledger';
 Alias			: 'alias' ;
 MapFile			: 'mapFile' ;
 Update			: 'update'	;
+Insert			: 'insert' ;
+Delete			: 'delete' ;
 DepleteStock	: 'depleteStock' ;
 CommitStock		: 'commitStock' ;
 AddStock		: 'addStock' ;
@@ -765,7 +788,7 @@ Digit
     :  [0-9]
     ;
 fragment
-Sign :   Plus | Minus;
+Sign :  [-+] ;
    
 fragment
 Year
@@ -808,10 +831,12 @@ SimpleEscapeSequence
     :   '\\' ['"?abfnrtv\\]
     ;
 
-ExtendedAscii
-	: [\x80-\xfe]+
+/*ExtendedAscii
+	: [\x80-\xFE]+
 	-> skip
 	;
+
+	*/
 Whitespace
     :   [ \t]+
         -> skip
