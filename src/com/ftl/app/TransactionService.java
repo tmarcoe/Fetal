@@ -137,4 +137,16 @@ public class TransactionService extends FetalTransaction {
 	public void fetalLogger(String clss, String msg) {
 		System.err.printf("Error in %s: %s%n", clss, msg);
 	}
+
+	@Override
+	public void insert(String sql, Object record) {
+		System.out.printf("Insert: %s%n ", sql);
+		
+	}
+
+	@Override
+	public void delete(String sql, Object record) {
+		System.out.printf("Delete: %s%n ", sql);
+
+	}
 }

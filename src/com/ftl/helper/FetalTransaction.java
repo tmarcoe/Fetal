@@ -23,7 +23,8 @@ import java.util.concurrent.Semaphore;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CodePointCharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
@@ -537,6 +538,19 @@ public abstract class FetalTransaction {
 		return Long.valueOf(String.valueOf(c.get(Calendar.YEAR)));		
 	}
 	
+	public Date getDate(long year, long month, long day) {
+
+		int y = (int) Integer.valueOf(String.valueOf(year));
+		int m = (int) (Integer.valueOf(String.valueOf(month)) - 1);
+		int d = (int) Integer.valueOf(String.valueOf(day));
+		
+		Calendar c = Calendar.getInstance();
+		
+		c.set(y, m, d, 0, 0, 0);
+		
+		return c.getTime();
+	}
+	
 	protected String translateFormat(String format) {
 		StringBuilder sb = new StringBuilder(format);
 		int ndx = 0;
@@ -597,7 +611,7 @@ public abstract class FetalTransaction {
 		
 		BufferedReader read = new BufferedReader(new InputStreamReader(url.openStream(),"utf-8"));
 
-		ANTLRInputStream in = new ANTLRInputStream(read);
+		CodePointCharStream in = CharStreams.fromReader(read);
 		FetalLexer lexer = new FetalLexer(in);
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		FetalParser parser = new FetalParser(tokens);
@@ -629,7 +643,7 @@ public abstract class FetalTransaction {
 		
 		BufferedReader read = new BufferedReader(new InputStreamReader(url.openStream(),"utf-8"));
 
-		ANTLRInputStream in = new ANTLRInputStream(read);
+		CodePointCharStream in = CharStreams.fromReader(read);
 		FetalLexer lexer = new FetalLexer(in);
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		FetalParser parser = new FetalParser(tokens);
@@ -721,6 +735,8 @@ public abstract class FetalTransaction {
 	public abstract Object lookup(String sql, Object...args);
 	public abstract void update(String sql, Object...args);
 	public abstract Set<Object> list(String sql, Object...args);
+	public abstract void insert(String sql, Object record);
+	public abstract void delete(String sql, Object record);
 	public abstract void commitStock(Set<?> items);
 	public abstract void depleteStock(Set<?> items);
 	public abstract void addStock(String sku, Long qty);
