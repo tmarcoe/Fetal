@@ -8,8 +8,11 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -31,7 +34,10 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang.ClassUtils;
 import org.apache.log4j.Logger;
-
+import org.joda.time.DateTime;
+import org.joda.time.Hours;
+import org.joda.time.Minutes;
+import org.joda.time.format.DateTimeFormat;
 import org.xml.sax.SAXException;
 
 import com.ftl.derived.FetalLexer;
@@ -39,6 +45,8 @@ import com.ftl.derived.FetalParser;
 import com.ftl.derived.FetalParser.BlockContext;
 import com.ftl.derived.FetalParser.TransactionContext;
 import com.ftl.events.Step;
+
+
 
 public abstract class FetalTransaction {
 	private static Logger logger = Logger.getLogger(FetalTransaction.class);
@@ -219,12 +227,6 @@ public abstract class FetalTransaction {
 		return props;
 	}
 
-	/****************************************************************************
-	 * 
-	 * Setters and Getters from the Sales header.
-	 ****************************************************************************/
-
-
 	public void putMap(String account, String name) {
 		accountNames.put(account, name);
 	}
@@ -236,6 +238,10 @@ public abstract class FetalTransaction {
 		
 		return accountNum;
 	}
+	
+	/****************************************************************
+	 * Mapfile maps account names to account number
+	 ****************************************************************/
 	public void mapFile(String fileName) {
 		List<String> namePairs;
 		try {
@@ -312,8 +318,8 @@ public abstract class FetalTransaction {
 					return Long.valueOf(0);
 				}
 			}else if (var.getType() == VariableType.BOOLEAN) {
-				if (var.getValue() != null) {
-					return (boolean) var.getValue();
+				if (var.equals(null)) {
+					return ((Boolean) var.getValue()).booleanValue();
 				}else {
 					return false;
 				}
@@ -469,6 +475,7 @@ public abstract class FetalTransaction {
 		
 		return result;
 	}
+	
 	private Class<?> autoBox(Class<?> cls) {
 		Class<?> result = null;
 		if (cls == double.class) {
@@ -503,10 +510,67 @@ public abstract class FetalTransaction {
 		return result;
 	}
 	
+/***********************************************************************
+ * Date functions	
+ ***********************************************************************/
+	public Date truncateTime(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		
+		cal.set(Calendar.HOUR, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		
+		return cal.getTime();
+	}
+	
 	public Double getDays(Date date, Date date2) {
-		double diffDate =  (date2.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
+		String pattern = "yyyy-MM-dd:HH:mm";
+		SimpleDateFormat sd = new SimpleDateFormat(pattern);
+		
+		DateTime dt1 = DateTime.parse(sd.format(date), DateTimeFormat.forPattern(pattern));
+		DateTime dt2 = DateTime.parse(sd.format(date2), DateTimeFormat.forPattern(pattern));
 
-		return (double) Math.round((diffDate * 4.0) / 4.0);
+		Hours hours = Hours.hoursBetween(dt1, dt2);
+		
+		Integer diff = hours.getHours();
+		BigDecimal bd = new BigDecimal(Double.toString(diff.doubleValue()/24.0));
+		
+		return bd.setScale(2, RoundingMode.HALF_UP).doubleValue();
+	}
+	
+	public Double getHours(Date start, Date end) {
+		String pattern = "yyyy-MM-dd:HH:mm";
+		SimpleDateFormat sd = new SimpleDateFormat(pattern);
+		
+		DateTime dt1 = DateTime.parse(sd.format(start), DateTimeFormat.forPattern(pattern));
+		DateTime dt2 = DateTime.parse(sd.format(end), DateTimeFormat.forPattern(pattern));
+
+		Hours hours = Hours.hoursBetween(dt1, dt2);
+		
+		Integer diff = hours.getHours();
+		BigDecimal bd = new BigDecimal(Double.toString(diff.doubleValue()));
+		
+		return bd.setScale(2, RoundingMode.HALF_UP).doubleValue();
+
+	}
+	
+	public Double getMinutes(Date start, Date end) {
+		
+		String pattern = "yyyy-MM-dd:HH:mm";
+		SimpleDateFormat sd = new SimpleDateFormat(pattern);
+		
+		DateTime dt1 = DateTime.parse(sd.format(start), DateTimeFormat.forPattern(pattern));
+		DateTime dt2 = DateTime.parse(sd.format(end), DateTimeFormat.forPattern(pattern));
+
+		Minutes minutes = Minutes.minutesBetween(dt1, dt2);
+		
+		Integer diff = minutes.getMinutes();
+		
+		BigDecimal bd = new BigDecimal(Double.toString(diff.doubleValue()));
+		
+		return bd.setScale(2, RoundingMode.HALF_UP).doubleValue();
 	}
 	
 	public String dayOfTheWeek(Date date) {
@@ -568,6 +632,17 @@ public abstract class FetalTransaction {
 		}
 		return sb.toString();
 	}
+	
+	public double futureValue(double cash, double rate, long period) {
+		
+		return cash * ((1 + rate) * period);
+	}
+	
+	public double presentValue(double cash, double rate, long period) {
+		
+		return cash / ((1 + rate) * period);
+	}
+	
 	/*******************************************************************************
 	 * This is for debug only! It lists all declared variables and their values.
 	 *******************************************************************************/
@@ -595,9 +670,9 @@ public abstract class FetalTransaction {
 	}
 
 	/*******************************************************************************************
-	 * Rule loading functions There are 3 rule loading functions: 1.) The main
-	 * rule loader 2.) The block loader for 'if' statements (if statements are
-	 * in blocks). 3.) The loader for coupons.
+	 * Rule loading functions There are 3 rule loading functions:
+	 *  	1.) The main rule loader 
+	 *  	2.) The loader for coupons.
 	 *******************************************************************************************/
 
 	public void loadRule(String rule) throws IOException, RecognitionException, RuntimeException {
@@ -632,6 +707,38 @@ public abstract class FetalTransaction {
 		}
 	}
 
+	public double getBookValue(double cost, double salvage, double life, Double howOld, boolean isDouble) {
+		
+		double base = cost - salvage;
+		double depExpense = base / life;
+		// Is the doouble declining depreciation? If so, multiply it by 2 otherwise, only by 1
+		double rate = (depExpense / base) * ((isDouble)?2.0:1.0);
+		double bookValue = 0;
+		double depValue = cost;
+		double oldDepValue = 0.0;
+		double annualDep = 0.0;
+		double oldAnnualDep = 0.0;
+		double accum = 0.0;
+		
+		for (int i=0; i < howOld.intValue(); i++) {
+			depValue = depValue - annualDep;
+			annualDep = depValue * rate;
+			accum = accum + annualDep;
+			bookValue = cost - accum;
+			if (bookValue <= salvage){
+				bookValue =  oldDepValue - oldAnnualDep;
+				annualDep = bookValue - salvage;
+				accum = (accum < base)?accum:base;
+			
+				bookValue = (annualDep > salvage)?bookValue:salvage;
+			}
+			oldDepValue = depValue;
+			oldAnnualDep = annualDep; 
+		}
+		
+		return bookValue;	
+	}
+	
 	public void loadCoupon(String rule) throws IOException {
 		URL url;
 		
@@ -737,9 +844,6 @@ public abstract class FetalTransaction {
 	public abstract Set<Object> list(String sql, Object...args);
 	public abstract void insert(String sql, Object record);
 	public abstract void delete(String sql, Object record);
-	public abstract void commitStock(Set<?> items);
-	public abstract void depleteStock(Set<?> items);
-	public abstract void addStock(String sku, Long qty);
 	public abstract void fetalLogger(String clss, String msg);
 	
 

@@ -119,21 +119,6 @@ public class TransactionService extends FetalTransaction {
 	}
 
 	@Override
-	public void commitStock(Set<?> items) {
-		System.out.printf("Commiting %d items %n", items.size());
-	}
-
-	@Override
-	public void depleteStock(Set<?> items) {
-		System.out.printf("Depleting %d items %n", items.size());
-	}
-
-	@Override
-	public void addStock(String sku, Long qty) {
-		System.out.printf("addStock( %s, %d ) %n", sku, qty);
-	}
-
-	@Override
 	public void fetalLogger(String clss, String msg) {
 		System.err.printf("Error in %s: %s%n", clss, msg);
 	}

@@ -1,10 +1,43 @@
 package com.ftl.helper;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
 
 public class ObjectMath {
 
+	public Double round(Double arg) {
+		BigDecimal bd = new BigDecimal(arg);
+		
+		return bd.setScale(0,  RoundingMode.HALF_UP).doubleValue();
+	}
+	
+	public Double roundUp(Double arg) {		
+		BigDecimal bd = new BigDecimal(arg);
+		
+		return bd.setScale(0,  RoundingMode.UP).doubleValue();
+	}
+	
+	public Double roundDown(Double arg) {
+		BigDecimal bd = new BigDecimal(arg);
+		
+		return bd.setScale(0,  RoundingMode.DOWN).doubleValue();
+	}
+	
+	public Double roundTo(Double arg, Long places) {
+		BigDecimal bd = new BigDecimal(arg);
+		
+		return bd.setScale(Integer.valueOf(String.valueOf(places)),  RoundingMode.HALF_UP).doubleValue();
+	}
+	
+	public Double absDecimal(Double arg) {
+		return (arg < 0.0)? (arg *= -1.0): arg;
+	}
+	
+	public Long absNumeric (Long arg) {
+		return (arg < 0)? (arg *= -1): arg;
+	}
 	public Object exponentObject(Object l, Object r) {
 		Object retObj = null;
 		if (l == null || r == null) {
