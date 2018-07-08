@@ -124,8 +124,8 @@ public class TransactionService extends FetalTransaction {
 	}
 
 	@Override
-	public void insert(String sql, Object record) {
-		System.out.printf("Insert: %s%n ", sql);
+	public void insert(Object record) {
+		System.out.printf("Insert: %s%n ", record.toString());
 		
 	}
 
@@ -133,5 +133,25 @@ public class TransactionService extends FetalTransaction {
 	public void delete(String sql, Object record) {
 		System.out.printf("Delete: %s%n ", sql);
 
+	}
+
+	@Override
+	public void merge(Object record) {
+		System.out.printf("Merging: %s%n", record.toString());
+	}
+
+	@Override
+	public void commitStock(Set<?> items) {
+		for (Object item : items) {
+			System.out.printf("Committing: %s%n", item.toString());
+		}
+		
+	}
+
+	@Override
+	public void depleteStock(Set<?> items) {
+		for (Object item : items) {
+			System.out.printf("Depleting: %s%n", item.toString());
+		}
 	}
 }

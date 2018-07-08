@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -36,6 +37,7 @@ import org.apache.commons.lang.ClassUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Hours;
+import org.joda.time.LocalDate;
 import org.joda.time.Minutes;
 import org.joda.time.format.DateTimeFormat;
 import org.xml.sax.SAXException;
@@ -643,6 +645,162 @@ public abstract class FetalTransaction {
 		return cash / ((1 + rate) * period);
 	}
 	
+	public Date nextDate(Date base, Date last, String schedule ) {
+		Date result = null;
+		
+		switch (schedule) {
+		case "Annually":
+			result = annually(last);
+			break;
+		case "Bi-Annually":
+			result = biAnnually(last);
+			break;
+		case "Quarterly":
+			result = quarterly(last);
+			break;
+		case "Monthly":
+			result = monthly(last);
+			break;
+		case "Bi-Monthly":
+			result = biMonthly(base, last);
+			break;
+		case "Weekly":
+			result = weekly(last);
+			break;
+		case "Daily":
+			result = daily(last);
+			break;
+		}
+		
+		return result;
+	}
+	
+	private Date daily(Date last) {
+		LocalDate jLast = new LocalDate(last);
+		jLast.plusDays(1);
+		
+		return jLast.toDate();
+	}
+
+	private Date weekly(Date last) {
+		LocalDate jLast = new LocalDate(last);
+		jLast.plusWeeks(1);
+		
+		return jLast.toDate();
+	}
+
+	private Date biMonthly(Date base, Date last) {
+		LocalDate current = new LocalDate();
+		LocalDate jBase = new LocalDate(base);
+		LocalDate jLast = new LocalDate(last);
+		int firstDay;
+		int lastDay;
+		
+		if (jBase.getMonthOfYear() != 2) {
+			if (jBase.getDayOfMonth() > 15) {
+				lastDay = jBase.getDayOfMonth();
+				firstDay = (lastDay - 15);
+			}else {
+				firstDay = jBase.getDayOfMonth();
+				lastDay = firstDay + 15;
+			}
+		}else {
+			if (jBase.getDayOfMonth() > 14) {
+				lastDay = jBase.getDayOfMonth();
+				firstDay = (lastDay - 14);
+			}else {
+				firstDay = jBase.getDayOfMonth();
+				lastDay = firstDay + 14;
+			}
+		}
+		
+		if (jLast.getMonthOfYear() < current.getMonthOfYear()) {
+			current.withDayOfMonth(firstDay);
+		}else if (current.getDayOfMonth() < firstDay) {
+			current.withDayOfMonth(firstDay);
+		}else if (current.getDayOfMonth() > firstDay && current.getDayOfMonth() < lastDay) {
+			current.withDayOfMonth(lastDay);
+		}else if (current.getDayOfMonth() > lastDay) {
+			current.plusMonths(1).withDayOfMonth(firstDay);
+		}
+		
+		return current.toDate();
+	}
+
+	private Date monthly(Date last) {
+		LocalDate jLast = new LocalDate(last);
+		jLast.plusMonths(1);
+		
+		return jLast.toDate();
+	}
+
+	private Date quarterly(Date last) {
+		String firstQtr = props.getProperty("firstQuarter");
+		String secondQtr = props.getProperty("secondQuarter");
+		String thirdQtr = props.getProperty("thirdQuarter");
+		String fourthQtr = props.getProperty("fourthQuarter");
+		
+		int quarter = 0;
+		DateFormat df = new SimpleDateFormat("MM-dd");
+		String inpDate = df.format(last);
+		
+		if (inpDate.compareTo(firstQtr) >= 0 && inpDate.compareTo(secondQtr) < 0) {
+			quarter = 1;
+		}else if (inpDate.compareTo(secondQtr) >= 0 && inpDate.compareTo(thirdQtr) < 0) {
+			quarter = 2;
+		}else if (inpDate.compareTo(thirdQtr) >= 0 && inpDate.compareTo(fourthQtr) < 0) {
+			quarter = 3;
+		}else if (inpDate.compareTo(fourthQtr) >= 0) {
+			quarter = 3;
+		}
+		quarter = (quarter % 4) + 1;
+		
+		String current = "";
+		Calendar cal = Calendar.getInstance();
+		switch (quarter) {
+		case 1:
+			current = firstQtr;
+			break;
+		case 2:
+			current = secondQtr;
+			break;
+		case 3:
+			current = thirdQtr;
+			break;
+		case 4:
+			current = fourthQtr;
+			break;
+		}
+		
+		String[] mmdd = current.split("-");
+		Integer month = Integer.valueOf(mmdd[0]);
+		Integer day = Integer.valueOf(mmdd[1]);
+		
+		cal.set(Calendar.MONTH, month);
+		cal.set(Calendar.DAY_OF_MONTH, day);
+		
+		cal.set(Calendar.HOUR_OF_DAY, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		
+		return cal.getTime();	
+	}
+
+	private Date biAnnually(Date last) {
+		LocalDate jLast = new LocalDate(last);
+		jLast.plusMonths(6);
+		
+		return jLast.toDate();
+	}
+
+	private Date annually(Date last) {
+		LocalDate jLast = new LocalDate(last);
+		jLast.plusYears(1);
+		
+		return jLast.toDate();
+	}
+
 	/*******************************************************************************
 	 * This is for debug only! It lists all declared variables and their values.
 	 *******************************************************************************/
@@ -739,46 +897,12 @@ public abstract class FetalTransaction {
 		return bookValue;	
 	}
 	
-	public void loadCoupon(String rule) throws IOException {
-		URL url;
-		
-		if (rule.contains("//") ) {
-			url = new URL(rule);
-		}else{
-			url = new URL(props.getProperty("couponUrl") + rule);
-		}
-		
-		BufferedReader read = new BufferedReader(new InputStreamReader(url.openStream(),"utf-8"));
-
-		CodePointCharStream in = CharStreams.fromReader(read);
-		FetalLexer lexer = new FetalLexer(in);
-		CommonTokenStream tokens = new CommonTokenStream(lexer);
-		FetalParser parser = new FetalParser(tokens);
-		fParser = parser;
-		parser.removeErrorListeners(); // remove ConsoleErrorListener
-		parser.addErrorListener(new FetalErrorListener()); // add ours
-		try {
-			transCtx = parser.transaction(this);
-		} catch (RuntimeException e) {
-			if (errMsg.length() == 0) {
-				errMsg = e.toString();
-				logger.error(errMsg);
-			}
-			throw new RuntimeException(errMsg);
-		}
-	}
-	
 	public void loadRule(File file) throws RecognitionException, IOException, RuntimeException {
 		String url = file.toURI().toURL().getPath();
 		url = "File://" + url;
 		loadRule(url);
 	}
 	
-	public void loadCoupon(File file) throws RecognitionException, IOException, RuntimeException {
-		String url = file.toURI().toURL().getPath();
-		url = "File://" + url;
-		loadCoupon(url);
-	}
 	public void _credit(Double amount, String account) {
 		account = getMap(account);
 		credit(amount, account);
@@ -842,9 +966,12 @@ public abstract class FetalTransaction {
 	public abstract Object lookup(String sql, Object...args);
 	public abstract void update(String sql, Object...args);
 	public abstract Set<Object> list(String sql, Object...args);
-	public abstract void insert(String sql, Object record);
+	public abstract void merge(Object record);
+	public abstract void insert(Object record);
 	public abstract void delete(String sql, Object record);
 	public abstract void fetalLogger(String clss, String msg);
+	public abstract void commitStock(Set<?> items);
+	public abstract void depleteStock(Set<?> items);
 	
 
 }
