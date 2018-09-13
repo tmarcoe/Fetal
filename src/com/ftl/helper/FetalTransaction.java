@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.Semaphore;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -677,16 +678,14 @@ public abstract class FetalTransaction {
 	
 	private Date daily(Date last) {
 		LocalDate jLast = new LocalDate(last);
-		jLast.plusDays(1);
 		
-		return jLast.toDate();
+		return jLast.plusDays(1).toDate();
 	}
 
 	private Date weekly(Date last) {
 		LocalDate jLast = new LocalDate(last);
-		jLast.plusWeeks(1);
 		
-		return jLast.toDate();
+		return jLast.plusWeeks(1).toDate();
 	}
 
 	private Date biMonthly(Date base, Date last) {
@@ -715,13 +714,13 @@ public abstract class FetalTransaction {
 		}
 		
 		if (jLast.getMonthOfYear() < current.getMonthOfYear()) {
-			current.withDayOfMonth(firstDay);
+			current = current.withDayOfMonth(firstDay);
 		}else if (current.getDayOfMonth() < firstDay) {
-			current.withDayOfMonth(firstDay);
+			current = current.withDayOfMonth(firstDay);
 		}else if (current.getDayOfMonth() > firstDay && current.getDayOfMonth() < lastDay) {
-			current.withDayOfMonth(lastDay);
+			current = current.withDayOfMonth(lastDay);
 		}else if (current.getDayOfMonth() > lastDay) {
-			current.plusMonths(1).withDayOfMonth(firstDay);
+			current = current.plusMonths(1).withDayOfMonth(firstDay);
 		}
 		
 		return current.toDate();
@@ -729,9 +728,8 @@ public abstract class FetalTransaction {
 
 	private Date monthly(Date last) {
 		LocalDate jLast = new LocalDate(last);
-		jLast.plusMonths(1);
 		
-		return jLast.toDate();
+		return jLast.plusMonths(1).toDate();
 	}
 
 	private Date quarterly(Date last) {
@@ -789,16 +787,14 @@ public abstract class FetalTransaction {
 
 	private Date biAnnually(Date last) {
 		LocalDate jLast = new LocalDate(last);
-		jLast.plusMonths(6);
 		
-		return jLast.toDate();
+		return jLast.plusMonths(6).toDate();
 	}
 
 	private Date annually(Date last) {
 		LocalDate jLast = new LocalDate(last);
-		jLast.plusYears(1);
 		
-		return jLast.toDate();
+		return jLast.plusYears(1).toDate();
 	}
 
 	/*******************************************************************************
@@ -932,12 +928,42 @@ public abstract class FetalTransaction {
 	
 	public void _update(String sql, Object...args) {
 		sql = translateFormat(sql);
-		update(sql, args);
+		int ndx = sql.toUpperCase().indexOf("LIMIT");
+		int limit_num = 0;
+		if (ndx != -1) {
+			String limit = sql.substring(ndx);
+			sql = sql.substring(0, ndx);
+			StringTokenizer st = new StringTokenizer(limit);
+			int i = 0;
+			while (st.hasMoreTokens()) {
+				String number = st.nextToken();
+				if (i == 1) {
+					limit_num = Integer.valueOf(number);
+				}
+				i++;
+			}
+		}
+		update(sql, limit_num, args);
 	}
 	
 	public Set<Object>  _list(String sql, Object...args) {
 		sql = translateFormat(sql);
-		return list(sql, args);
+		int ndx = sql.toUpperCase().indexOf("LIMIT");
+		int limit_num = 0;
+		if (ndx != -1) {
+			String limit = sql.substring(ndx);
+			sql = sql.substring(0, ndx);
+			StringTokenizer st = new StringTokenizer(limit);
+			int i = 0;
+			while (st.hasMoreTokens()) {
+				String number = st.nextToken();
+				if (i == 1) {
+					limit_num = Integer.valueOf(number);
+				}
+				i++;
+			}
+		}
+		return list(sql, limit_num, args);
 	}
 	
 	/********************************************************************
@@ -956,6 +982,7 @@ public abstract class FetalTransaction {
 	public abstract void credit(Double amount, String account);
 	public abstract void debit(Double amount, String account);
 	public abstract void ledger(char type, Double amount, String account, String description);
+	public abstract void inventoryLedger(char type, Double qty, Double amount, String description);
 	public abstract double getBalance(String account);
 
 
@@ -964,11 +991,11 @@ public abstract class FetalTransaction {
 	 *************************************************************************************/
 
 	public abstract Object lookup(String sql, Object...args);
-	public abstract void update(String sql, Object...args);
-	public abstract Set<Object> list(String sql, Object...args);
+	public abstract void update(String sql, int limit, Object...args);
+	public abstract Set<Object> list(String sql, int limit, Object...args);
 	public abstract void merge(Object record);
 	public abstract void insert(Object record);
-	public abstract void delete(String sql, Object record);
+	public abstract void delete(Object record);
 	public abstract void fetalLogger(String clss, String msg);
 	public abstract void commitStock(Set<?> items);
 	public abstract void depleteStock(Set<?> items);

@@ -31,6 +31,54 @@ public class ObjectMath {
 		return bd.setScale(Integer.valueOf(String.valueOf(places)),  RoundingMode.HALF_UP).doubleValue();
 	}
 	
+	public Long toNumber(Object nmbr) {
+		Long result = 0L;
+		
+		switch (getType(nmbr)) {
+		case "String":
+			result = Long.valueOf((String) nmbr);
+			break;
+			
+		case "Double":
+			result = new Double((Double) nmbr).longValue();
+			break;
+			
+		case "Integer":
+			result =  new Long((Integer) nmbr).longValue();
+			break;
+			
+		case "Long":
+			result = (Long) nmbr;
+			break;
+		}
+		
+		return result;
+	}
+	
+	public Double toDecimal(Object decimal) {
+		Double result = 0.0;
+		
+		switch(getType(decimal)) {
+		case "String":
+			result = Double.valueOf((String) decimal);
+			break;
+			
+		case "Double":
+			result = (Double) decimal;
+			break;
+			
+		case "Integer":
+			result = new Integer((Integer) decimal).doubleValue();
+			break;
+			
+		case "Long":
+			result = new Long((Long) decimal).doubleValue();
+			break;
+		}
+		
+		return result;
+	}
+	
 	public Double absDecimal(Double arg) {
 		return (arg < 0.0)? (arg *= -1.0): arg;
 	}

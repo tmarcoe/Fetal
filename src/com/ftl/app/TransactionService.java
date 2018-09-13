@@ -93,7 +93,7 @@ public class TransactionService extends FetalTransaction {
 
 
 	@Override
-	public Set<Object> list( String sql, Object... args) {
+	public Set<Object> list( String sql, int limit, Object... args) {
 		String format = "list( " + sql + " )\n";
 		format = translateFormat(format);
 		System.out.printf(format, args);
@@ -111,7 +111,7 @@ public class TransactionService extends FetalTransaction {
 	}
 
 	@Override
-	public void update(String sql, Object... args) {
+	public void update(String sql, int limit, Object... args) {
 		String format = "update( " + sql + " )\n";
 		format = translateFormat(format);
 		System.out.printf(format, args);
@@ -130,8 +130,8 @@ public class TransactionService extends FetalTransaction {
 	}
 
 	@Override
-	public void delete(String sql, Object record) {
-		System.out.printf("Delete: %s%n ", sql);
+	public void delete(Object record) {
+		System.out.printf("Delete: %n ", record.toString());
 
 	}
 
@@ -153,5 +153,11 @@ public class TransactionService extends FetalTransaction {
 		for (Object item : items) {
 			System.out.printf("Depleting: %s%n", item.toString());
 		}
+	}
+
+	@Override
+	public void inventoryLedger(char type, Double qty, Double amount, String description) {
+		System.out.printf("inventoryLedger(%c, %.02f, %.02f, %s)%n", type, qty, amount, description);
+		
 	}
 }
