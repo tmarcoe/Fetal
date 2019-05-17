@@ -141,21 +141,6 @@ public class TransactionService extends FetalTransaction {
 	}
 
 	@Override
-	public void commitStock(Set<?> items) {
-		for (Object item : items) {
-			System.out.printf("Committing: %s%n", item.toString());
-		}
-		
-	}
-
-	@Override
-	public void depleteStock(Set<?> items) {
-		for (Object item : items) {
-			System.out.printf("Depleting: %s%n", item.toString());
-		}
-	}
-
-	@Override
 	public void inventoryLedger(char type, Double qty, Double amount, String description) {
 		System.out.printf("inventoryLedger(%c, %.02f, %.02f, %s)%n", type, qty, amount, description);
 		
